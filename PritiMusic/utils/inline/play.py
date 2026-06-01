@@ -46,26 +46,31 @@ def track_markup(_, videoid, user_id, channel, fplay):
 def stream_markup_timer(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    percentage = (played_sec / duration_sec) * 100
+    
+    if duration_sec == 0:
+        percentage = 0
+    else:
+        percentage = (played_sec / duration_sec) * 100
+        
     umm = math.floor(percentage)
 
-    if 0 < umm <= 10:
+    if 0 <= umm <= 10:
         bar = "◉—————————"
-    elif 10 < umm < 20:
+    elif 10 < umm <= 20:
         bar = "—◉————————"
-    elif 20 <= umm < 30:
+    elif 20 < umm <= 30:
         bar = "——◉———————"
-    elif 30 <= umm < 40:
+    elif 30 < umm <= 40:
         bar = "———◉——————"
-    elif 40 <= umm < 50:
+    elif 40 < umm <= 50:
         bar = "————◉—————"
-    elif 50 <= umm < 60:
+    elif 50 < umm <= 60:
         bar = "—————◉————"
-    elif 60 <= umm < 70:
+    elif 60 < umm <= 70:
         bar = "——————◉———"
-    elif 70 <= umm < 80:
+    elif 70 < umm <= 80:
         bar = "———————◉——"
-    elif 80 <= umm < 95:
+    elif 80 < umm <= 90:
         bar = "————————◉—"
     else:
         bar = "—————————◉"
@@ -81,9 +86,7 @@ def stream_markup_timer(_, chat_id, played, dur):
         [
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="↻", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-            styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
         ],
         [clone_button()],
         [
@@ -98,9 +101,7 @@ def stream_markup(_, chat_id):
         [
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="↻", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-            styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
         ],
         [
             styled_button(text=_["CLOSE_BUTTON"], callback_data="close", style=ButtonStyle.DANGER),
@@ -222,7 +223,6 @@ def queue_markup(_, videoid, chat_id):
                 callback_data=f"ADMIN Pause|{chat_id}",
                 style=ButtonStyle.DANGER
             ),
-            styled_button(text="▢ sᴛᴏᴘ", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(
                 text="sᴋɪᴘ ‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY
             ),
@@ -259,9 +259,7 @@ def stream_markup2(_, chat_id):
         [
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="↻", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-            styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
         ],
         [clone_button()],
         [
@@ -274,23 +272,32 @@ def stream_markup2(_, chat_id):
 def stream_markup_timer2(_, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    percentage = (played_sec / duration_sec) * 100
+    
+    if duration_sec == 0:
+        percentage = 0
+    else:
+        percentage = (played_sec / duration_sec) * 100
+        
     umm = math.floor(percentage)
 
-    if 0 < umm <= 40:
+    if 0 <= umm <= 10:
         bar = "◉——————————"
-    elif 10 < umm < 20:
+    elif 10 < umm <= 20:
         bar = "—◉—————————"
-    elif 20 < umm < 30:
+    elif 20 < umm <= 30:
         bar = "——◉————————"
-    elif 30 <= umm < 40:
+    elif 30 < umm <= 40:
         bar = "———◉———————"
-    elif 40 <= umm < 50:
+    elif 40 < umm <= 50:
         bar = "————◉——————"
-    elif 50 <= umm < 60:
+    elif 50 < umm <= 60:
+        bar = "—————◉—————"
+    elif 60 < umm <= 70:
         bar = "——————◉————"
-    elif 50 <= umm < 70:
+    elif 70 < umm <= 80:
         bar = "———————◉———"
+    elif 80 < umm <= 90:
+        bar = "————————◉——"
     else:
         bar = "——————————◉"
 
@@ -305,9 +312,7 @@ def stream_markup_timer2(_, chat_id, played, dur):
         [
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
-            styled_button(text="↻", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-            styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
         ],
         [clone_button()],
         [
@@ -498,23 +503,32 @@ def panel_markup_3(_, videoid, chat_id):
 def panel_markup_4(_, vidid, chat_id, played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
-    percentage = (played_sec / duration_sec) * 100
+    
+    if duration_sec == 0:
+        percentage = 0
+    else:
+        percentage = (played_sec / duration_sec) * 100
+        
     umm = math.floor(percentage)
 
-    if 0 < umm <= 40:
+    if 0 <= umm <= 10:
         bar = "◉——————————"
-    elif 10 < umm < 20:
+    elif 10 < umm <= 20:
         bar = "—◉—————————"
-    elif 20 < umm < 30:
+    elif 20 < umm <= 30:
         bar = "——◉————————"
-    elif 30 <= umm < 40:
+    elif 30 < umm <= 40:
         bar = "———◉———————"
-    elif 40 <= umm < 50:
+    elif 40 < umm <= 50:
         bar = "————◉——————"
-    elif 50 <= umm < 60:
+    elif 50 < umm <= 60:
+        bar = "—————◉—————"
+    elif 60 < umm <= 70:
         bar = "——————◉————"
-    elif 50 <= umm < 70:
+    elif 70 < umm <= 80:
         bar = "———————◉———"
+    elif 80 < umm <= 90:
+        bar = "————————◉——"
     else:
         bar = "——————————◉"
 
@@ -533,18 +547,12 @@ def panel_markup_4(_, vidid, chat_id, played, dur):
                 style=ButtonStyle.DANGER
             ),
             styled_button(
-                text="▢ sᴛᴏᴘ ▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER
-            ),
-            styled_button(
                 text="sᴋɪᴘ ‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY
             ),
         ],
         [
             styled_button(
                 text="▷ ʀᴇsᴜᴍᴇ", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS
-            ),
-            styled_button(
-                text="ʀᴇᴘʟᴀʏ ↺", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY
             ),
         ],
         [clone_button()],
@@ -565,7 +573,6 @@ def panel_markup_clone(_, vidid, chat_id):
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
-            styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
         ],
         [clone_button()],
         [
