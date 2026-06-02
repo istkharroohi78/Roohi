@@ -96,30 +96,37 @@ async def get_thumb(videoid, user_id, user_name):
         draw.text((650, 470), f"Views: {views}", fill=(150, 150, 150), font=f2)
         draw.text((650, 530), f"Duration: {duration}", fill=(150, 150, 150), font=f2)
 
-        # --- SWELL WAVEFORM ---
+        # --- UNIFORM DYNAMIC WAVEFORM ---
         bar_count = 64; bar_width = 5; bar_gap = 12
         total_width = bar_count * bar_gap
-        start_x = (1920 - total_width) / 2; base_y = 780
+        # Waveform thoda upar kiya (780 se 760 kiya)
+        start_x = (1920 - total_width) / 2; base_y = 760 
+        
+        # Har video ka wave alag ho but x-axis par constant/barabar feel de
+        random.seed(videoid) 
         for i in range(bar_count):
-            if i < 15: h = 15 + (i * 2)
-            elif i < 48: h = 45 
-            else: h = 45 - ((i - 48) * 2)
+            h = random.randint(15, 45) # Random heights without the swell shape
             x0 = start_x + (i * bar_gap); x1 = x0 + bar_width
             y0 = base_y - h; y1 = base_y + h
             fill_color = (255, 255, 255, 255) if i < (bar_count // 2) else (150, 150, 150, 200)
             if x1 > x0: draw.rounded_rectangle((x0, y0, x1, y1), radius=3, fill=fill_color)
 
-        # --- PROGRESS LINE & ICONS ---
-        line_y = base_y + 80
+        # --- PROGRESS LINE & ICONS (Shifted Upwards) ---
+        line_y = base_y + 55 # Pehle +80 tha, ab thoda upar kiya
         draw.line([(start_x, line_y), (start_x + total_width, line_y)], fill=(80, 80, 80), width=1)
         draw.line([(start_x, line_y), (start_x + (total_width // 2), line_y)], fill=(255, 255, 255), width=2)
         draw.ellipse(((start_x + total_width // 2) - 8, line_y - 8, (start_x + total_width // 2) + 8, line_y + 8), fill="white")
         draw.text((start_x, line_y + 20), "00:00", fill="white", font=f_small)
         draw.text((start_x + total_width - 80, line_y + 20), duration, fill="white", font=f_small)
 
-        ctrl_y = line_y + 60; mid_x = 960
+        ctrl_y = line_y + 50 # Pehle +60 tha, play icons ko bhi aur upar kiya
+        mid_x = 960
+        
+        # Play / Pause Icon
         draw.ellipse((mid_x - 30, ctrl_y - 30, mid_x + 30, ctrl_y + 30), outline="white", width=3)
         draw.polygon([(mid_x - 8, ctrl_y - 12), (mid_x + 14, ctrl_y), (mid_x - 8, ctrl_y + 12)], fill="white")
+        
+        # Previous / Next Icons
         draw.ellipse((mid_x - 80, ctrl_y - 20, mid_x - 45, ctrl_y + 20), outline="white", width=2)
         draw.ellipse((mid_x + 45, ctrl_y - 20, mid_x + 80, ctrl_y + 20), outline="white", width=2)
 
