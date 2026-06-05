@@ -5,7 +5,6 @@ from typing import Union
 import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
-# Nayi library import kar li gayi hai
 from youtubesearchpython.__future__ import VideosSearch, Playlist
 import aiohttp
 
@@ -290,7 +289,7 @@ class YouTubeAPI:
 
     async def autoplay(self, last_vidid: str, title: str, max_duration: int = None):
         """
-        Custom Autoplay function with robust yt-dlp fallback.
+        Custom Autoplay function with robust yt-dlp fallback & Float Safe parsing.
         """
         try:
             import random
@@ -329,9 +328,9 @@ class YouTubeAPI:
                             "duration_sec": dur_sec
                         })
             except Exception:
-                pass # Ignore library bugs, switch to yt-dlp
+                pass 
 
-            # Fallback: yt-dlp (Agar youtubesearchpython fail hua)
+            # Fallback: yt-dlp 
             if not valid_choices:
                 import yt_dlp
                 loop = asyncio.get_event_loop()
@@ -344,8 +343,13 @@ class YouTubeAPI:
                         vidid = entry.get("id")
                         if not vidid or vidid == last_vidid:
                             continue
+                        
+                        raw_dur = entry.get("duration", 0)
+                        try:
+                            dur_sec = int(float(raw_dur)) if raw_dur else 0
+                        except (ValueError, TypeError):
+                            dur_sec = 0
                             
-                        dur_sec = entry.get("duration", 0)
                         if not dur_sec or dur_sec < 30: continue
                         if max_duration and dur_sec > max_duration: continue
                             
