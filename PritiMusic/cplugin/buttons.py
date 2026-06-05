@@ -3,6 +3,9 @@ from config import SUPPORT_CHAT, OWNER_USERNAME
 from PritiMusic import app
 import config
 from PritiMusic.utils.formatters import time_to_seconds
+
+# Yahan par zaroori imports add kar diye gaye hain 👇
+from pyrogram.types import InlineKeyboardMarkup
 from button import styled_button, ButtonStyle
 
 # --- HELPERS ---
@@ -260,10 +263,11 @@ def panel_markup_clone(_, vidid, chat_id):
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
         ],
         [
-            InlineKeyboardButton(text="<- 20s", callback_data=f"ADMIN SeekBack|{chat_id}"),
-            InlineKeyboardButton(text="🔁", callback_data=f"ADMIN Loop|{chat_id}"),
-            InlineKeyboardButton(text="🔀", callback_data=f"ADMIN Shuffle|{chat_id}"),
-            InlineKeyboardButton(text="20s + ->", callback_data=f"ADMIN SeekForward|{chat_id}"),
+            # Yahan par convert kiya gaya hai 👇
+            styled_button(text="<- 20s", callback_data=f"ADMIN SeekBack|{chat_id}", style=ButtonStyle.PRIMARY),
+            styled_button(text="🔁", callback_data=f"ADMIN Loop|{chat_id}", style=ButtonStyle.PRIMARY),
+            styled_button(text="🔀", callback_data=f"ADMIN Shuffle|{chat_id}", style=ButtonStyle.PRIMARY),
+            styled_button(text="20s + ->", callback_data=f"ADMIN SeekForward|{chat_id}", style=ButtonStyle.PRIMARY),
         ],
         [clone_button()],
         [styled_button(text=_["CLOSE_BUTTON"], callback_data="close", style=ButtonStyle.DANGER)]
