@@ -457,16 +457,16 @@ class Call(PyTgCalls):
                         search = VideosSearch(search_query, limit=30)
                         result = await search.next()
                         
-                        if result and "result" in result and len(result["result"]) > 0:
+                        if result and result.get("result"):
                             # Filter out the exact previous video ID
                             choices = [res for res in result["result"] if str(res.get("id")) != last_vidid]
                             
                             if choices:
                                 # Pick a completely random track from the list
                                 next_track = random.choice(choices)
-                                next_vidid = str(next_track.get("id"))
-                                next_title = str(next_track.get("title", "Unknown Title"))
-                                next_dur = str(next_track.get("duration", "Unknown"))
+                                next_vidid = str(next_track.get("id") or "")
+                                next_title = str(next_track.get("title") or "Unknown Title")
+                                next_dur = str(next_track.get("duration") or "Unknown")
                                 
                                 db[chat_id].append({
                                     "vidid": next_vidid,
@@ -496,7 +496,7 @@ class Call(PyTgCalls):
                 if chat_id in self.active_clients:
                     del self.active_clients[chat_id]
                 return await client.leave_group_call(chat_id)
-            # ⬆专 --- AUTOPLAY LOGIC END --- ⬆专
+            # ⬆️ --- AUTOPLAY LOGIC END --- ⬆️
             
         except:
             try:
@@ -596,12 +596,18 @@ class Call(PyTgCalls):
                             video=True if str(streamtype) == "video" else False,
                         )
                     except:
-                        return await mystic.edit_text(
-                            _["call_6"], disable_web_page_preview=True
-                        )
+                        try:
+                            return await mystic.edit_text(
+                                _["call_6"], disable_web_page_preview=True
+                            )
+                        except Exception:
+                            return
                 
                 if not file_path or str(file_path) == "None":
-                    await mystic.edit_text("❌ **Error:** yt-dlp failed to download the next track. Skipping...")
+                    try:
+                        await mystic.edit_text("❌ **Error:** yt-dlp failed to download the next track. Skipping...")
+                    except Exception:
+                        pass
                     return await self.change_stream(client, chat_id)
 
                 if video:
@@ -628,7 +634,10 @@ class Call(PyTgCalls):
                 if not img: img = get_random_img(config.PLAYLIST_IMG_URL)
 
                 button = stream_markup(_, chat_id)
-                await mystic.delete()
+                try:
+                    await mystic.delete()
+                except Exception:
+                    pass
                 run = await chat_client.send_photo(
                     chat_id=original_chat_id,
                     photo=img,
