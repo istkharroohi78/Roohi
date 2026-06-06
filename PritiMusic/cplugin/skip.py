@@ -7,6 +7,7 @@ from PritiMusic import YouTube, app
 from PritiMusic.core.call import Lucky
 from PritiMusic.misc import db
 from PritiMusic.utils.database import get_loop
+from PritiMusic.utils.database.autoplay import is_autoplay_group # 🟢 FIX: Imported Autoplay Check
 # ✅ FIX: Import AdminRightsCheck from Cplugin folder
 from PritiMusic.cplugin.utils.decorators.admins import AdminRightsCheck
 from PritiMusic.utils.inline import close_markup, stream_markup, stream_markup2
@@ -52,7 +53,15 @@ async def skip(cli, message: Message, _, chat_id):
                                 return await message.reply_text(_["admin_12"])
                             if popped:
                                 await auto_clean(popped)
-                            if not check:
+                        if not check:
+                            # 🟢 FIX: Handoff to Autoplay for /skip <number>
+                            auto_on = await is_autoplay_group(chat_id)
+                            if auto_on:
+                                if not hasattr(Lucky, "last_played_song"):
+                                    Lucky.last_played_song = {}
+                                Lucky.last_played_song[chat_id] = popped
+                                return await Lucky.change_stream(cli, chat_id)
+                            else:
                                 try:
                                     await message.reply_text(
                                         text=_["admin_6"].format(
@@ -81,16 +90,24 @@ async def skip(cli, message: Message, _, chat_id):
             if popped:
                 await auto_clean(popped)
             if not check:
-                await message.reply_text(
-                    text=_["admin_6"].format(
-                        message.from_user.mention, message.chat.title
-                    ),
-                    reply_markup=close_markup(_),
-                )
-                try:
-                    return await Lucky.stop_stream(chat_id)
-                except:
-                    return
+                # 🟢 FIX: Handoff to Autoplay for normal /skip
+                auto_on = await is_autoplay_group(chat_id)
+                if auto_on:
+                    if not hasattr(Lucky, "last_played_song"):
+                        Lucky.last_played_song = {}
+                    Lucky.last_played_song[chat_id] = popped
+                    return await Lucky.change_stream(cli, chat_id)
+                else:
+                    await message.reply_text(
+                        text=_["admin_6"].format(
+                            message.from_user.mention, message.chat.title
+                        ),
+                        reply_markup=close_markup(_),
+                    )
+                    try:
+                        return await Lucky.stop_stream(chat_id)
+                    except:
+                        return
         except:
             try:
                 await message.reply_text(
