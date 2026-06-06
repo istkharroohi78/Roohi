@@ -1,4 +1,4 @@
-import random # ✅ Added Random
+import random
 from pyrogram import filters, Client
 from pyrogram.types import InlineKeyboardMarkup, Message
 
@@ -6,9 +6,10 @@ import config
 from PritiMusic import YouTube, app
 from PritiMusic.core.call import Lucky
 from PritiMusic.misc import db
-from PritiMusic.utils.database import get_loop
-from PritiMusic.utils.database.autoplay import is_autoplay_group # 🟢 FIX: Imported Autoplay Check
-# ✅ FIX: Import AdminRightsCheck from Cplugin folder
+
+# ✅ FIX: Added get_assistant here to fetch the correct VC client
+from PritiMusic.utils.database import get_loop, get_assistant
+from PritiMusic.utils.database.autoplay import is_autoplay_group 
 from PritiMusic.cplugin.utils.decorators.admins import AdminRightsCheck
 from PritiMusic.utils.inline import close_markup, stream_markup, stream_markup2
 from PritiMusic.utils.stream.autoclear import auto_clean
@@ -26,7 +27,7 @@ from PritiMusic.utils.database.clonedb import get_owner_id_from_db, get_cloned_s
 )
 @AdminRightsCheck
 async def skip(cli, message: Message, _, chat_id):
-    # ✅ FIX: Get Clone Bot Info dynamically
+    # ✅ Get Clone Bot Info dynamically
     a = await cli.get_me()
     
     C_BOT_SUPPORT_CHAT = await get_cloned_support_chat(a.id)
@@ -60,7 +61,9 @@ async def skip(cli, message: Message, _, chat_id):
                                 if not hasattr(Lucky, "last_played_song"):
                                     Lucky.last_played_song = {}
                                 Lucky.last_played_song[chat_id] = popped
-                                return await Lucky.change_stream(cli, chat_id)
+                                # ✅ FIX: Get correct assistant client
+                                assistant = await get_assistant(chat_id)
+                                return await Lucky.change_stream(assistant, chat_id)
                             else:
                                 try:
                                     await message.reply_text(
@@ -96,7 +99,9 @@ async def skip(cli, message: Message, _, chat_id):
                     if not hasattr(Lucky, "last_played_song"):
                         Lucky.last_played_song = {}
                     Lucky.last_played_song[chat_id] = popped
-                    return await Lucky.change_stream(cli, chat_id)
+                    # ✅ FIX: Get correct assistant client
+                    assistant = await get_assistant(chat_id)
+                    return await Lucky.change_stream(assistant, chat_id)
                 else:
                     await message.reply_text(
                         text=_["admin_6"].format(
@@ -137,7 +142,6 @@ async def skip(cli, message: Message, _, chat_id):
         db[chat_id][0]["speed_path"] = None
         db[chat_id][0]["speed"] = 1.0
         
-    # ✅ FIX: Safely extract user_id and user_name (accounts for Anonymous Admins)
     req_user_id = message.from_user.id if message.from_user else 0
     req_user_name = message.from_user.first_name if message.from_user else "Admin"
         
@@ -154,7 +158,6 @@ async def skip(cli, message: Message, _, chat_id):
         except:
             return await message.reply_text(_["call_6"])
         button = stream_markup2(_, chat_id)
-        # ✅ FIX: Added missing arguments
         img = await get_thumb(videoid, req_user_id, req_user_name)
         run = await message.reply_photo(
             photo=img,
@@ -188,7 +191,6 @@ async def skip(cli, message: Message, _, chat_id):
         except:
             return await mystic.edit_text(_["call_6"])
         button = stream_markup(_, chat_id)
-        # ✅ FIX: Added missing arguments
         img = await get_thumb(videoid, req_user_id, req_user_name)
         run = await message.reply_photo(
             photo=img,
@@ -210,7 +212,6 @@ async def skip(cli, message: Message, _, chat_id):
             return await message.reply_text(_["call_6"])
         button = stream_markup2(_, chat_id)
         
-        # ✅ Random Check for STREAM_IMG_URL
         if isinstance(config.STREAM_IMG_URL, list):
             img_url = random.choice(config.STREAM_IMG_URL)
         else:
@@ -241,7 +242,6 @@ async def skip(cli, message: Message, _, chat_id):
         if videoid == "telegram":
             button = stream_markup2(_, chat_id)
             
-            # ✅ Random Check for TELEGRAM URLs
             if str(streamtype) == "audio":
                 if isinstance(config.TELEGRAM_AUDIO_URL, list):
                     img_url = random.choice(config.TELEGRAM_AUDIO_URL)
@@ -265,7 +265,6 @@ async def skip(cli, message: Message, _, chat_id):
         elif videoid == "soundcloud":
             button = stream_markup2(_, chat_id)
             
-            # ✅ Random Check for SOUNDCLOUD / VIDEO URLs
             if str(streamtype) == "audio":
                 if isinstance(config.SOUNCLOUD_IMG_URL, list):
                     img_url = random.choice(config.SOUNCLOUD_IMG_URL)
@@ -288,7 +287,6 @@ async def skip(cli, message: Message, _, chat_id):
             db[chat_id][0]["markup"] = "tg"
         else:
             button = stream_markup(_, chat_id)
-            # ✅ FIX: Added missing arguments
             img = await get_thumb(videoid, req_user_id, req_user_name)
             run = await message.reply_photo(
                 photo=img,
