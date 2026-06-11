@@ -1,6 +1,6 @@
-# PritiMusic/cplugin/autoplay.py
-
 from pyrogram import Client, filters
+from pyrogram.enums import ChatMemberStatus
+from pyrogram.errors import MessageNotModified
 from pyrogram.types import (
     Message,
     InlineKeyboardMarkup,
@@ -61,7 +61,7 @@ def autoplay_caption(enabled: bool):
 ᴡʜᴇɴ ᴛʜᴇ ǫᴜᴇᴜᴇ ᴇɴᴅ𝐬.
 
 ━━━━━━━━━━━━━━━
-⚡ 𝐏ᴏᴡᴇʀᴇᴅ ʙʏ ➛ 𝐁𝐞𝐭𝐚𝐁ᴏᴛ𝐬
+⚡ 𝐏ᴏᴡᴇʀᴇᴅ ʙʏ ➛ 𝐁𝐞ᴛᴀ𝐁ᴏᴛ𝐬
 """
 
 
@@ -87,7 +87,7 @@ async def autoplay_panel(
 
 
 @Client.on_callback_query(
-    filters.regex(r"^AUTOPLAY_(ENABLE|DISABLE)\|")
+    filters.regex(r"^AUTOPLAY_(ENABLE|DISABLE)\|") & ~BANNED_USERS
 )
 async def autoplay_callback(
     client: Client,
@@ -95,6 +95,11 @@ async def autoplay_callback(
 ):
     action, chat_id = query.data.split("|")
     chat_id = int(chat_id)
+
+    # Admin verification to prevent standard users from toggling the setting
+    member = await client.get_chat_member(chat_id, query.from_user.id)
+    if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+        return await query.answer("❌ You must be an admin to change this setting!", show_alert=True)
 
     if action == "AUTOPLAY_ENABLE":
         await add_autoplay_group(chat_id)
@@ -113,14 +118,18 @@ async def autoplay_callback(
             show_alert=False,
         )
 
-    await query.message.edit_caption(
-        caption=autoplay_caption(enabled),
-        reply_markup=autoplay_panel_markup(chat_id, enabled),
-    )
+    # Prevent crash if the button is clicked but the status is already what they selected
+    try:
+        await query.message.edit_caption(
+            caption=autoplay_caption(enabled),
+            reply_markup=autoplay_panel_markup(chat_id, enabled),
+        )
+    except MessageNotModified:
+        pass
 
 
 @Client.on_callback_query(
-    filters.regex("^AUTOPLAY_STATUS$")
+    filters.regex("^AUTOPLAY_STATUS$") & ~BANNED_USERS
 )
 async def autoplay_status(
     client: Client,
