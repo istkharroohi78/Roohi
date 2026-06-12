@@ -1,7 +1,7 @@
 import asyncio
 import os
 import re
-import time # ✅ Imported for timestamping
+import time
 import yt_dlp
 import aiohttp
 import logging
@@ -30,7 +30,7 @@ def get_safe_filename(title: str, default_id: str) -> str:
 
 # ----------------- DOWNLOADERS -----------------
 
-# 🚀 FAST DOWNLOAD VIA SHRUTIBOTS API
+# 🚀 1. FAST DOWNLOAD VIA SHRUTIBOTS API
 async def api_download(video_id: str, download_type: str, title: str = None) -> str:
     if not API_URL or not API_KEY:
         return None
@@ -70,7 +70,7 @@ async def api_download(video_id: str, download_type: str, title: str = None) -> 
                 pass
         return None
 
-# 🛡️ FALLBACK METHOD (YOUTUBE)
+# 🛡️ 2. YOUTUBE YT-DLP FALLBACK (With Spoofing Bypass)
 async def ytdl_fallback_download(link: str, download_type: str, title: str = None) -> str:
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
@@ -81,7 +81,7 @@ async def ytdl_fallback_download(link: str, download_type: str, title: str = Non
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         return file_path
 
-    video_format = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
+    video_format = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
     
     ydl_opts = {
         'format': video_format if download_type == "video" else 'bestaudio/bestvideo+bestaudio/best', 
@@ -89,7 +89,7 @@ async def ytdl_fallback_download(link: str, download_type: str, title: str = Non
         'quiet': True,
         'no_warnings': True,
         'cookiefile': 'cookies.txt', 
-        'extractor_args': {'youtube': ['player_client=android', 'player_client=ios']}, 
+        'extractor_args': {'youtube': ['player_client=ios,tv_embedded']}, 
         'geo_bypass': True,
         'nocheckcertificate': True,
     }
@@ -112,14 +112,46 @@ async def ytdl_fallback_download(link: str, download_type: str, title: str = Non
         LOGGER.error(f"yt-dlp fallback error: {str(e)}")
         return None
 
-# 🎵 SOURCE-HOPPING FALLBACK (SOUNDCLOUD)
-async def soundcloud_fallback_download(title: str) -> str:
-    """Bypass YouTube connectivity restrictions by fetching from alternative platforms like SoundCloud."""
-    if not title:
-        return None
-        
+# 🎵 3. JIOSAAVN SOURCE-HOPPING (PRIMARY FALLBACK)
+async def jiosaavn_fallback_download(title: str) -> str:
+    if not title: return None
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    filename = get_safe_filename(title, f"sc_{int(time.time())}")
+    
+    # Remove tags like (Official Video) for better search matching
+    clean_title = re.sub(r'\(.*?\)|\[.*?\]|official|video|audio|lyric', '', title, flags=re.IGNORECASE).strip()
+    filename = get_safe_filename(clean_title, f"js_{int(time.time())}")
+    file_path = os.path.join(DOWNLOAD_DIR, f"{filename}.mp3")
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Using a public JioSaavn API to fetch song details
+            async with session.get(f"https://saavn.dev/api/search/songs?query={clean_title}") as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    if data.get("success") and data.get("data", {}).get("results"):
+                        song_data = data["data"]["results"][0]
+                        download_urls = song_data.get("downloadUrl", [])
+                        if download_urls:
+                            # Fetch the highest quality format (usually 320kbps)
+                            best_url = download_urls[-1]["url"]
+                            async with session.get(best_url) as song_resp:
+                                if song_resp.status == 200:
+                                    with open(file_path, "wb") as f:
+                                        async for chunk in song_resp.content.iter_chunked(131072):
+                                            f.write(chunk)
+                                    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                                        LOGGER.info(f"🟢 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from JioSaavn!")
+                                        return file_path
+    except Exception as e:
+        LOGGER.error(f"JioSaavn fallback error: {str(e)}")
+    return None
+
+# 🎵 4. SOUNDCLOUD SOURCE-HOPPING (ULTIMATE FALLBACK)
+async def soundcloud_fallback_download(title: str) -> str:
+    if not title: return None
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    clean_title = re.sub(r'\(.*?\)|\[.*?\]|official|video|audio|lyric', '', title, flags=re.IGNORECASE).strip()
+    filename = get_safe_filename(clean_title, f"sc_{int(time.time())}")
     file_path = os.path.join(DOWNLOAD_DIR, f"{filename}.mp3")
 
     ydl_opts = {
@@ -136,47 +168,63 @@ async def soundcloud_fallback_download(title: str) -> str:
     
     try:
         loop = asyncio.get_event_loop()
-        # yt-dlp natively supports scsearch to find tracks on SoundCloud
-        search_query = f"scsearch1:{title}"
+        search_query = f"scsearch1:{clean_title}"
         await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([search_query]))
         
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            LOGGER.info(f"Source-Hopping successful! Downloaded from SoundCloud: {title}")
+            LOGGER.info(f"🟢 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from SoundCloud!")
             return file_path
     except Exception as e:
         LOGGER.error(f"SoundCloud fallback error: {str(e)}")
-        
     return None
 
 
-# 🎧 MAIN AUDIO DOWNLOADER (UPDATED WITH SOURCE-HOPPING)
+# 🎧 MAIN AUDIO ENGINE
 async def download_song(link: str, title: str = None) -> str:
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
     if not video_id or len(video_id) < 3:
         return None
         
-    # 1. Primary Source: ShrutiBots API
+    # Auto-fetch title if play.py didn't send it
+    if not title:
+        try:
+            search = VideosSearch(video_id, limit=1)
+            title = (await search.next())["result"][0]["title"]
+        except Exception:
+            pass
+
+    # Phase 1: API
     api_result = await api_download(video_id, "audio", title)
     if api_result: return api_result
     
-    # 2. Secondary Source: YouTube yt-dlp fallback
+    # Phase 2: YouTube Fallback
     yt_result = await ytdl_fallback_download(link, "audio", title)
     if yt_result: return yt_result
     
-    # 3. 🚨 Source-Hopping: Try alternative platforms if YouTube returns errors
+    # Phase 3 & 4: Source Hopping (JioSaavn -> SoundCloud)
     if title:
-        LOGGER.warning(f"YouTube failed for '{title}'. Initiating Source-Hopping to SoundCloud...")
+        LOGGER.warning(f"🔴 YouTube blocked '{title}'. Hopping to JioSaavn...")
+        js_result = await jiosaavn_fallback_download(title)
+        if js_result: return js_result
+
+        LOGGER.warning(f"🔴 JioSaavn failed. Hopping to SoundCloud...")
         sc_result = await soundcloud_fallback_download(title)
         if sc_result: return sc_result
-        # Future Architecture: We can easily add Apple Music or JioSaavn fallbacks here!
 
     return None
 
-# 🎥 MAIN VIDEO DOWNLOADER
+# 🎥 MAIN VIDEO ENGINE
 async def download_video(link: str, title: str = None) -> str:
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
     if not video_id or len(video_id) < 3:
         return None
+
+    if not title:
+        try:
+            search = VideosSearch(video_id, limit=1)
+            title = (await search.next())["result"][0]["title"]
+        except:
+            pass
 
     api_result = await api_download(video_id, "video", title)
     if api_result: return api_result
@@ -219,7 +267,6 @@ class YouTubeAPI:
         if "&" in link:
             link = link.split("&")[0]
             
-        # Try 1: Primary Search
         try:
             results = VideosSearch(link, limit=1)
             response = await results.next()
@@ -234,14 +281,13 @@ class YouTubeAPI:
         except Exception:
             pass
 
-        # Try 2: yt-dlp Fallback Search
         try:
             loop = asyncio.get_event_loop()
             ydl_opts = {
                 "quiet": True, 
                 "extract_flat": True, 
                 "cookiefile": "cookies.txt",
-                "extractor_args": {"youtube": ["player_client=android", "player_client=ios"]} 
+                "extractor_args": {"youtube": ["player_client=ios,tv_embedded"]} 
             } 
             ydl = yt_dlp.YoutubeDL(ydl_opts)
             search_query = link if "youtube.com" in link or "youtu.be" in link else f"ytsearch1:{link}"
@@ -337,7 +383,6 @@ class YouTubeAPI:
         if "&" in link:
             link = link.split("&")[0]
             
-        # Try 1: Primary Search
         try:
             results = VideosSearch(link, limit=1)
             response = await results.next()
@@ -358,14 +403,13 @@ class YouTubeAPI:
         except Exception:
             pass
 
-        # Try 2: yt-dlp Fallback Search
         try:
             loop = asyncio.get_event_loop()
             ydl_opts = {
                 "quiet": True, 
                 "extract_flat": True, 
                 "cookiefile": "cookies.txt",
-                "extractor_args": {"youtube": ["player_client=android", "player_client=ios"]}
+                "extractor_args": {"youtube": ["player_client=ios,tv_embedded"]} 
             }
             ydl = yt_dlp.YoutubeDL(ydl_opts)
             search_query = link if "youtube.com" in link or "youtu.be" in link else f"ytsearch1:{link}"
@@ -402,7 +446,7 @@ class YouTubeAPI:
         ytdl_opts = {
             "quiet": True,
             "cookiefile": "cookies.txt", 
-            "extractor_args": {"youtube": ["player_client=android", "player_client=ios"]},
+            "extractor_args": {"youtube": ["player_client=ios,tv_embedded"]},
             "external_downloader": "aria2c",
             "external_downloader_args": [
                 "-x", "16",            
@@ -454,7 +498,6 @@ class YouTubeAPI:
             thumbnail = result[query_type]["thumbnails"][0]["url"].split("?")[0]
             return title, duration_min, thumbnail, vidid
         except Exception:
-            # Basic fallback for inline slider if search fails
             return "Unknown Title", "0:00", "https://telegra.ph/file/2e3d368e77c449c287430.jpg", "None"
 
     async def download(
@@ -530,7 +573,7 @@ class YouTubeAPI:
                     "quiet": True, 
                     "extract_flat": True, 
                     "cookiefile": "cookies.txt",
-                    "extractor_args": {"youtube": ["player_client=android", "player_client=ios"]} 
+                    "extractor_args": {"youtube": ["player_client=ios,tv_embedded"]} 
                 } 
                 ydl = yt_dlp.YoutubeDL(ytdl_opts)
                 
