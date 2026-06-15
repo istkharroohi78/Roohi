@@ -1,7 +1,7 @@
 import random
 import asyncio
 from pyrogram import filters, Client
-from pyrogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery, InputMediaPhoto, InlineKeyboardMarkup
 
 import config
 from PritiMusic import app, YouTube
@@ -20,8 +20,6 @@ from PritiMusic.utils.thumbnails import get_thumb
 from config import BANNED_USERS, STREAM_IMG_URL, votemode, adminlist
 from strings import get_string
 from PritiMusic.utils.inline.start import private_panel
-
-# ✅ Import Styles
 from button import styled_button, ButtonStyle
 
 checker = {}
@@ -104,57 +102,61 @@ async def del_back_playlist(client, CallbackQuery, _):
             return await CallbackQuery.answer("Queue khali hai!", show_alert=True)
             
         if command == "Skip":
+            await CallbackQuery.answer("Skipping...", show_alert=True)
             txt = f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
             try:
-                popped = check.pop(0)
-                if popped: await auto_clean(popped)
-                if not check:
-                    await CallbackQuery.edit_message_text(txt)
-                    await CallbackQuery.message.reply_text(_["admin_6"].format(mention, CallbackQuery.message.chat.title), reply_markup=close_markup(_))
-                    return await Lucky.stop_stream(chat_id)
-            except: return await Lucky.stop_stream(chat_id)
-        else:
+                # 🟢 THE FIX: Safely trigger unified change_stream for proper Autoplay Sync
+                clients = await Lucky.get_active_clients(chat_id)
+                pytgcalls_client = clients[0] if clients else Lucky.one
+                await Lucky.change_stream(pytgcalls_client, chat_id)
+                
+                await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
+            except Exception as e:
+                await Lucky.stop_stream(chat_id)
+                
+        else: # Replay Logic
+            await CallbackQuery.answer("Replaying...", show_alert=True)
             txt = f"➻ sᴛʀᴇᴀᴍ ʀᴇ-ᴘʟᴀʏᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
-        
-        await CallbackQuery.answer()
-        db[chat_id][0]["played"] = 0
-        
-        # Safe Thumbnail Fetch
-        img = await get_thumb(check[0]["vidid"], CallbackQuery.from_user.id, client) or \
-              (random.choice(STREAM_IMG_URL) if isinstance(STREAM_IMG_URL, list) else STREAM_IMG_URL)
-        
-        await Lucky.skip_stream(chat_id, check[0]["file"], video=True if check[0]["streamtype"]=="video" else False)
-        
-        run = await CallbackQuery.message.reply_photo(
-            photo=img,
-            caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{check[0]['vidid']}", check[0]['title'][:23], check[0]['dur'], check[0]['by']),
-            reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
-        )
-        if chat_id in db and db[chat_id]:
-            db[chat_id][0]["mystic"] = run
-            db[chat_id][0]["markup"] = "stream"
-        await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
+            db[chat_id][0]["played"] = 0
+            
+            # Safe Thumbnail Fetch
+            img = await get_thumb(check[0]["vidid"], CallbackQuery.from_user.id, client) or \
+                  (random.choice(STREAM_IMG_URL) if isinstance(STREAM_IMG_URL, list) else STREAM_IMG_URL)
+            
+            await Lucky.skip_stream(chat_id, check[0]["file"], video=True if check[0]["streamtype"]=="video" else False)
+            
+            run = await CallbackQuery.message.reply_photo(
+                photo=img,
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{check[0]['vidid']}", check[0]['title'][:23], check[0]['dur'], check[0]['by']),
+                reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
+            )
+            if chat_id in db and db[chat_id]:
+                db[chat_id][0]["mystic"] = run
+                db[chat_id][0]["markup"] = "stream"
+            await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
 
 # --- TIMER MARKUP UPDATER ---
 async def markup_timer():
     while True:
         await asyncio.sleep(7)
-        active_chats = await get_active_chats()
-        for chat_id in active_chats:
-            try:
-                if not await is_music_playing(chat_id): continue
-                playing = db.get(chat_id)
-                if not playing or int(playing[0].get("seconds", 0)) == 0: continue
-                mystic = playing[0].get("mystic")
-                if not mystic: continue
-                
+        try:
+            active_chats = await get_active_chats()
+            for chat_id in active_chats:
                 try:
-                    language = await get_lang(chat_id)
-                    _ = get_string(language)
-                except: _ = get_string("en")
-                
-                buttons = stream_markup_timer(_, chat_id, seconds_to_min(playing[0]["played"]), playing[0]["dur"])
-                await mystic.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
-            except: continue
+                    if not await is_music_playing(chat_id): continue
+                    playing = db.get(chat_id)
+                    if not playing or int(playing[0].get("seconds", 0)) == 0: continue
+                    mystic = playing[0].get("mystic")
+                    if not mystic: continue
+                    
+                    try:
+                        language = await get_lang(chat_id)
+                        _ = get_string(language)
+                    except: _ = get_string("en")
+                    
+                    buttons = stream_markup_timer(_, chat_id, seconds_to_min(playing[0]["played"]), playing[0]["dur"])
+                    await mystic.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+                except: continue
+        except: pass
 
 asyncio.create_task(markup_timer())
