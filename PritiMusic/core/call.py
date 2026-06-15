@@ -11,11 +11,8 @@ from pyrogram.enums import ParseMode
 
 from pytgcalls import PyTgCalls
 from pytgcalls.types import Update, MediaStream, AudioQuality, VideoQuality
-from pytgcalls.exceptions import (
-    AlreadyJoinedError,
-    NoActiveGroupCall,
-    TelegramServerError,
-)
+# 🛑 FIX: Yahan se purane exceptions hata kar sirf PyTgCallsException rakha gaya hai
+from pytgcalls.exceptions import PyTgCallsException
 
 import config
 from PritiMusic import LOGGER, YouTube, app
@@ -298,12 +295,13 @@ class Call(PyTgCalls):
         language = await get_lang(chat_id)
         _ = get_string(language)
         
+        # 🛑 FIX: Exception handling properly updated for latest PyTgCalls
         try:
             await self._safe_join_call(assistant_to_join, chat_id, link, video)
-        except NoActiveGroupCall: raise AssistantErr(_["call_8"])
-        except AlreadyJoinedError: raise AssistantErr(_["call_9"])
-        except TelegramServerError: raise AssistantErr(_["call_10"])
-        except Exception as e: raise AssistantErr(f"Join Call Error: {e}")
+        except PyTgCallsException as e: 
+            raise AssistantErr(f"VC Error: {e} - (Please check if Voice Chat is on)")
+        except Exception as e: 
+            raise AssistantErr(f"Join Call Error: {e}")
         
         await add_active_chat(chat_id)
         await music_on(chat_id)
