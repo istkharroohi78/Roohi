@@ -88,7 +88,6 @@ class Call(PyTgCalls):
         self.active_clients = {} 
 
     async def _safe_change_stream(self, client, chat_id, file_path, video=False, extra_args=""):
-        # 🟢 FIX: Removed Dolby EQ to prevent FFmpeg crash. Using standard High Quality.
         if not video:
             stream = MediaStream(file_path, audio_parameters=AudioQuality.HIGH, ffmpeg_parameters=extra_args)
             await client.play(chat_id, stream)
@@ -302,17 +301,60 @@ class Call(PyTgCalls):
             
             if popped: await auto_clean(popped)
             
-            # --- AUTOPLAY LOGIC ---
+            # --- 🌟 ADVANCED AUTOPLAY LOGIC (ALL SINGERS) ---
             if not check:
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 auto_on = await is_autoplay_group(chat_id)
                 if auto_on and popped:
                     LOGGER(__name__).info(f"Autoplay searching next song for {chat_id}")
-                    raw_title = popped.get("title", "Popular Music")
+                    raw_title = popped.get("title", "Unknown Title")
+                    title_lower = str(raw_title).lower()
                     last_vidid = str(popped.get("vidid", ""))
 
                     try:
-                        recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=str(raw_title), max_duration=900)
+                        keywords_map = {
+                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "b praak", "jass manak", "harrdy sandhu", "parmish verma", "punjabi"],
+                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj", "bhojpuri"],
+                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "haryanvi"],
+                            "Hindi": ["arijit singh", "neha kakkar", "shreya ghoshal", "jubin nautiyal", "atif aslam", "darshan raval", "armaan malik", "sonu nigam", "yo yo honey singh", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "hindi"],
+                            "Tamil": ["anirudh", "ar rahman", "rahman", "yuvan shankar raja", "sid sriram", "harris jayaraj", "vijay prakash", "s.p. balasubrahmanyam", "tamil", "kollywood"],
+                            "Telugu": ["devi sri prasad", "dsp", "thaman", "sid sriram", "anurag kulkarni", "mangli", "geetha madhuri", "allu", "ramarao", "telugu", "tollywood"],
+                            "English": ["taylor swift", "justin bieber", "ed sheeran", "ariana grande", "the weeknd", "drake", "eminem", "billie eilish", "dua lipa", "bruno mars", "post malone", "english", "pop song"]
+                        }
+
+                        detected_lang = "Hindi"
+                        detected_artist = None
+
+                        for lang, kws in keywords_map.items():
+                            for kw in kws:
+                                if kw in title_lower:
+                                    detected_lang = lang
+                                    if kw not in ["hindi", "punjabi", "bhojpuri", "haryanvi", "tamil", "telugu", "english", "kollywood", "tollywood", "pop song"]:
+                                        detected_artist = kw
+                                    break
+                            if detected_artist or detected_lang != "Hindi":
+                                break
+
+                        if detected_artist:
+                            search_query = random.choice([
+                                f"{detected_artist} latest hit single official video",
+                                f"{detected_artist} trending track lyrical",
+                                f"{detected_artist} superhit popular track audio",
+                                f"{detected_artist} best song official"
+                            ])
+                        else:
+                            lang_pools = {
+                                "Hindi": ["hindi single track official video", "bollywood latest lyrical hit song", "trending hindi pop music"],
+                                "Punjabi": ["latest punjabi single official video", "punjabi trending track lyrical", "punjabi pop hit track"],
+                                "Bhojpuri": ["bhojpuri latest single video song", "bhojpuri trending song official", "bhojpuri hit dj remix"],
+                                "Haryanvi": ["haryanvi single track official", "latest haryanvi video song", "haryanvi dj hit pop"],
+                                "Tamil": ["tamil latest single official video", "kollywood trending song lyrical", "tamil hit movie track"],
+                                "Telugu": ["telugu tollywood latest single song", "telugu lyrical video official", "telugu trending track"],
+                                "English": ["english pop single official music video", "trending english lyrical song", "global hit english track"]
+                            }
+                            search_query = random.choice(lang_pools[detected_lang])
+
+                        recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=search_query, max_duration=900)
                         if recommendation:
                             db[chat_id].append({
                                 "title": str(recommendation.get("title", "Unknown Title")),
