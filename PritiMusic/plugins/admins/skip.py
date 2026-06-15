@@ -8,23 +8,25 @@ from PritiMusic.core.call import Lucky
 from PritiMusic.misc import db
 
 # ✅ Imports Updated
-from PritiMusic.utils.database import get_loop, is_active_chat
-from PritiMusic.utils.decorators.admins import AdminRightsCheck
+from PritiMusic.utils.database import get_loop
+from PritiMusic.cplugin.utils.decorators.admins import AdminRightsCheck
 from PritiMusic.utils.inline import close_markup
 from PritiMusic.utils.stream.autoclear import auto_clean
 from config import BANNED_USERS
 
 @app.on_message(
-    filters.command(["skip", "cskip", "next", "cnext"], prefixes=["/", "!"]) & filters.group & ~BANNED_USERS
+    filters.command(["skip", "cskip", "next", "cnext"], prefixes=["/", "!", "%", ",", ".", "@", "#"]) 
+    & filters.group 
+    & ~BANNED_USERS
 )
 @AdminRightsCheck
-async def skip(cli, message: Message, _, chat_id):
+async def skip_comm(cli, message: Message, _, chat_id):
     # 1. Queue check
     check = db.get(chat_id)
     if not check:
         return await message.reply_text(_["queue_2"])
     
-    # 2. Loop check (Agar loop on hai, toh skip allow nahi hoga)
+    # 2. Loop check
     loop = await get_loop(chat_id)
     if loop != 0:
         return await message.reply_text(_["admin_8"])
@@ -42,11 +44,11 @@ async def skip(cli, message: Message, _, chat_id):
         else:
             return await message.reply_text(_["admin_11"].format(len(check)-1))
 
-    # 4. Actual Skip Logic (Synced with change_stream)
+    # 4. Process Logic
     try:
-        # Agar skip_count 1 se zyada hai, toh hum pehle ke songs uda denge
+        # Purane gaane pop karke clean karo
         if skip_count > 1:
-            for x in range(skip_count - 1):
+            for _ in range(skip_count - 1):
                 try:
                     popped = check.pop(0)
                     if popped:
@@ -54,13 +56,14 @@ async def skip(cli, message: Message, _, chat_id):
                 except:
                     pass
         
-        # Ab last wale ko change_stream ke through skip karenge
-        # Lucky.change_stream() automatically head pop karta hai aur next start karta hai
-        pytgcalls_client = Lucky.one
-        if chat_id in Lucky.active_clients and Lucky.active_clients[chat_id]:
-            pytgcalls_client = Lucky.active_clients[chat_id][0]
+        # 🟢 THE FIX: Safely retrieve client using our Call class method
+        clients = await Lucky.get_active_clients(chat_id)
+        pytgcalls_client = clients[0] if clients else Lucky.one
             
+        # change_stream automatic pop karega aur next play karega
         await Lucky.change_stream(pytgcalls_client, chat_id)
+        
+        await message.reply_text(f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n└ʙʏ : {message.from_user.mention}")
         
     except Exception as e:
         # Error handling
@@ -69,6 +72,7 @@ async def skip(cli, message: Message, _, chat_id):
                 text=_["admin_6"].format(message.from_user.mention, message.chat.title),
                 reply_markup=close_markup(_)
             )
+            # Agar skip failure ho jaye toh stream stop kar do
             await Lucky.stop_stream(chat_id)
         except:
             pass
