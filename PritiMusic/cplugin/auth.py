@@ -1,5 +1,8 @@
 from pyrogram import filters, Client
 from pyrogram.types import Message
+from pyrogram.enums import ChatMemberStatus # 🟢 Zaroori Import
+
+import config # 🟢 Zaroori Import
 from PritiMusic import app
 from PritiMusic.utils import extract_user, int_to_alpha
 from PritiMusic.utils.database import (
@@ -12,9 +15,20 @@ from PritiMusic.utils.decorators import AdminActual, language
 from PritiMusic.utils.inline import close_markup
 from config import BANNED_USERS, adminlist
 
-@Client.on_message(filters.command("auth") & filters.group & ~BANNED_USERS)
+@Client.on_message(filters.command(["auth", "cauth"], prefixes=["/", "!"]) & filters.group & ~BANNED_USERS)
 @AdminActual
-async def auth(client, message: Message, _):
+async def auth(client: Client, message: Message, _):
+    
+    # 🟢 THE FIX: BULLETPROOF ADMIN CHECK
+    # Koi aam user kisi ko auth nahi kar payega
+    if message.from_user.id not in config.SUDOERS:
+        try:
+            member = await client.get_chat_member(message.chat.id, message.from_user.id)
+            if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return await message.reply_text("❌ **Sirf Admins he is command ko use kar sakte hain!**")
+        except Exception:
+            return await message.reply_text("❌ **Error: Admin rights verify nahi ho paye.**")
+
     if not message.reply_to_message:
         if len(message.command) != 2:
             return await message.reply_text(_["general_1"])
@@ -47,9 +61,19 @@ async def auth(client, message: Message, _):
     else:
         return await message.reply_text(_["auth_3"].format(user.mention))
 
-@Client.on_message(filters.command("unauth") & filters.group & ~BANNED_USERS)
+@Client.on_message(filters.command(["unauth", "cunauth"], prefixes=["/", "!", "%", ",", ".", "@", "#"]) & filters.group & ~BANNED_USERS)
 @AdminActual
-async def unauthusers(client, message: Message, _):
+async def unauthusers(client: Client, message: Message, _):
+    
+    # 🟢 THE FIX: BULLETPROOF ADMIN CHECK
+    if message.from_user.id not in config.SUDOERS:
+        try:
+            member = await client.get_chat_member(message.chat.id, message.from_user.id)
+            if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return await message.reply_text("❌ **Sirf Admins he is command ko use kar sakte hain!**")
+        except Exception:
+            return await message.reply_text("❌ **Error: Admin rights verify nahi ho paye.**")
+
     if not message.reply_to_message:
         if len(message.command) != 2:
             return await message.reply_text(_["general_1"])
@@ -68,9 +92,9 @@ async def unauthusers(client, message: Message, _):
     else:
         return await message.reply_text(_["auth_5"].format(user.mention))
 
-@Client.on_message(filters.command(["authlist", "authusers"]) & filters.group & ~BANNED_USERS)
+@Client.on_message(filters.command(["authlist", "authusers", "cauthlist"], prefixes=["/", "!", "%", ",", ".", "@", "#"]) & filters.group & ~BANNED_USERS)
 @language
-async def authusers(client, message: Message, _):
+async def authusers(client: Client, message: Message, _):
     auth_names = await get_authuser_names(message.chat.id)
     
     if not auth_names:
