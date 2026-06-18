@@ -11,7 +11,7 @@ buttons = InlineKeyboardMarkup(
             styled_button(text="▢", callback_data="end_cb", style=ButtonStyle.DANGER),
         ],
         [
-            styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/clone_MUSICrobot", style=ButtonStyle.SUCCESS)
+            styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/SizzuMusicBot", style=ButtonStyle.SUCCESS)
         ],
     ]
 )
@@ -19,7 +19,7 @@ buttons = InlineKeyboardMarkup(
 close_key = InlineKeyboardMarkup(
     [
         [
-            styled_button(text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』", url="https://t.me/clone_MUSICrobot?startgroup=true", style=ButtonStyle.SUCCESS),
+            styled_button(text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』", url="https://t.me/SizzuMusicBot?startgroup=true", style=ButtonStyle.SUCCESS),
             styled_button(text="✯ CLOSE ✯", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ]
@@ -39,18 +39,15 @@ def stream_markup(chat_id):
             # Middle Row: Seek, Loop & Shuffle
             [
                 styled_button(text="<- 20s", callback_data=f"ADMIN SeekBack|{chat_id}", style=ButtonStyle.PRIMARY),
-                styled_button(text="🔁", callback_data=f"ADMIN Loop|{chat_id}", style=ButtonStyle.PRIMARY),
-                styled_button(text="🔀", callback_data=f"ADMIN Shuffle|{chat_id}", style=ButtonStyle.PRIMARY),
-                styled_button(text="20s + ->", callback_data=f"ADMIN SeekForward|{chat_id}", style=ButtonStyle.PRIMARY),
+                 styled_button(text="20s + ->", callback_data=f"ADMIN SeekForward|{chat_id}", style=ButtonStyle.PRIMARY),
             ],
             # Bottom Row 1: Clone
             [
-                styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/clone_MUSICrobot", style=ButtonStyle.SUCCESS)
+                styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/SizzuMusicBot", style=ButtonStyle.SUCCESS)
             ],
             # Bottom Row 2: Add Me & Close
             [
-                styled_button(text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』", url="https://t.me/clone_MUSICrobot?startgroup=true", style=ButtonStyle.SUCCESS),
-                styled_button(text="✯ CLOSE ✯", callback_data="close", style=ButtonStyle.DANGER)
+                                styled_button(text="✯ CLOSE ✯", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ]
     )
