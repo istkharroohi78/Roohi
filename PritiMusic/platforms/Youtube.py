@@ -65,6 +65,7 @@ async def _async_run(func, *args, **kwargs):
 # ----------------- DOWNLOADERS -----------------
 
 async def multi_api_download(video_id: str, download_type: str, title: str = None) -> str:
+    """Cycles through all available APIs to download the track/video."""
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = get_safe_filename(title, video_id)
     ext = "mp4" if download_type == "video" else "mp3"
@@ -170,9 +171,10 @@ async def spotify_fallback_download(title: str) -> str:
                                         async for chunk in song_resp.content.iter_chunked(131072):
                                             f.write(chunk)
                                     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                                        LOGGER.info(f"🚀 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from Spotify!")
                                         return file_path
-    except Exception:
-        pass
+    except Exception as e:
+        LOGGER.error(f"Spotify fallback error: {str(e)}")
     return None
 
 async def jiosaavn_fallback_download(title: str) -> str:
@@ -199,9 +201,10 @@ async def jiosaavn_fallback_download(title: str) -> str:
                                         async for chunk in song_resp.content.iter_chunked(131072):
                                             f.write(chunk)
                                     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                                        LOGGER.info(f"🚀 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from JioSaavn!")
                                         return file_path
-    except Exception:
-        pass
+    except Exception as e:
+        LOGGER.error(f"JioSaavn fallback error: {str(e)}")
     return None
 
 async def soundcloud_fallback_download(title: str) -> str:
@@ -229,9 +232,10 @@ async def soundcloud_fallback_download(title: str) -> str:
         await _async_run(yt_dlp.YoutubeDL(ydl_opts).download, [search_query])
         
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            LOGGER.info(f"🚀 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from SoundCloud!")
             return file_path
-    except Exception:
-        pass
+    except Exception as e:
+        LOGGER.error(f"SoundCloud fallback error: {str(e)}")
     return None
 
 async def download_song(link: str, title: str = None) -> str:
@@ -239,38 +243,6 @@ async def download_song(link: str, title: str = None) -> str:
     if not video_id or len(video_id) < 3:
         return None
         
-    if not title:
-        try:
-            search = VideosSearch(video_id, limit=1)
-            res = await search.next()
-            if res and res.get("result"):
-                title = res["result"][0]["title"]
-        except Exception:
-            pass
-
-    api_result = await multi_api_download(video_id, "audio", title)
-    if api_result: return api_result
-    
-    yt_result = await ytdl_fallback_download(link, "audio", title)
-    if yt_result: return yt_result
-    
-    if title:
-        sp_result = await spotify_fallback_download(title)
-        if sp_result: return sp_result
-
-        js_result = await jiosaavn_fallback_download(title)
-        if js_result: return js_result
-
-        sc_result = await soundcloud_fallback_download(title)
-        if sc_result: return sc_result
-
-    return None
-
-async def download_video(link: str, title: str = None) -> str:
-    video_id = extract_video_id(link)
-    if not video_id or len(video_id) < 3:
-        return None
-
     if not title:
         try:
             search = VideosSearch(video_id, limit=1)
@@ -534,14 +506,16 @@ class YouTubeAPI:
             LOGGER.error(f"Error in YouTubeAPI.download: {e}")
             return None, False
 
-    async def autoplay(self, played_vidids: Union[str, list], title: str, max_duration: int = None):
+    async def autoplay(self, last_vidid: Union[str, list], title: str, max_duration: int = None):
         try:
             import random
             
-            if isinstance(played_vidids, str):
-                played_vidids = [played_vidids]
-            elif not played_vidids:
-                played_vidids = []
+            # Agar title galti se blank aaye toh default gaane search kare
+            if not title:
+                title = "trending top hits hindi english"
+
+            # Backward compatibility: agar purana code ek string bhej raha hai, toh usey list banalo
+            played_vidids = last_vidid if isinstance(last_vidid, list) else [last_vidid] if last_vidid else []
 
             search_query = f"{title} official audio"
             valid_choices = []
@@ -553,6 +527,7 @@ class YouTubeAPI:
                     for res in result["result"]:
                         vidid = str(res.get("id") or "")
                         
+                        # MAIN FIX: Check if song is already played
                         if not vidid or vidid == "None" or vidid in played_vidids: 
                             continue
                             
@@ -576,6 +551,7 @@ class YouTubeAPI:
                         })
             except Exception: pass 
 
+            # Fallback agar YT Search fail ho jaye
             if not valid_choices:
                 ytdl_opts = {
                     "quiet": True, 
@@ -620,4 +596,4 @@ class YouTubeAPI:
             return None
 
 YouTube = YouTubeAPI()
-        
+                
