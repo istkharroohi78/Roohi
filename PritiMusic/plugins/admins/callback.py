@@ -1,7 +1,7 @@
 import random
 import asyncio
 from pyrogram import filters, Client
-from pyrogram.types import CallbackQuery, InputMediaPhoto, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery, InputMediaPhoto, InlineKeyboardMarkup, InlineKeyboardButton
 
 import config
 from PritiMusic import app, YouTube
@@ -9,21 +9,28 @@ from PritiMusic.core.call import Lucky
 from PritiMusic.misc import SUDOERS, db
 from PritiMusic.utils.database import (
     get_active_chats, get_lang, get_upvote_count, is_active_chat,
-    is_music_playing, is_nonadmin_chat, music_off, music_on, set_loop, get_assistant
+    is_music_playing, is_nonadmin_chat, music_off, music_on, set_loop
 )
 from PritiMusic.utils.database.autoplay import is_autoplay_group, add_autoplay_group, remove_autoplay_group
 from PritiMusic.utils.decorators.language import languageCB
 from PritiMusic.utils.formatters import seconds_to_min
 from PritiMusic.utils.inline import close_markup, stream_markup, stream_markup_timer
-from PritiMusic.utils.stream.autoclear import auto_clean
 from PritiMusic.utils.thumbnails import get_thumb
-from config import BANNED_USERS, STREAM_IMG_URL, votemode, adminlist
+from config import BANNED_USERS, STREAM_IMG_URL, adminlist
 from strings import get_string
 from PritiMusic.utils.inline.start import private_panel
-from button import styled_button, ButtonStyle
 
-checker = {}
-upvoters = {}
+# --- FIXED HANDLERS FOR CLONE & SUPPORT ---
+
+@app.on_callback_query(filters.regex("support_callback"))
+async def support_callback(client, CallbackQuery):
+    await CallbackQuery.answer("Support ke liye yahan contact karein!", show_alert=True)
+    # Yahan apna support link add karein
+    await CallbackQuery.message.reply_text("📞 **Support Desk**\n\nKisi bhi samasya ke liye hamare group mein join karein.")
+
+@app.on_callback_query(filters.regex("clone_callback"))
+async def clone_callback(client, CallbackQuery):
+    await CallbackQuery.answer("Clone system abhi update ho raha hai!", show_alert=True)
 
 # --- BACK BUTTON HANDLER ---
 @app.on_callback_query(filters.regex("settingsback_helper") & ~BANNED_USERS)
@@ -44,11 +51,6 @@ async def del_back_playlist(client, CallbackQuery, _):
     callback_request = callback_data.split(None, 1)[1]
     command, chat = callback_request.split("|")
     
-    if "_" in str(chat):
-        bet = chat.split("_")
-        chat = bet[0]
-        counter = bet[1]
-    
     chat_id = int(chat)
     if not await is_active_chat(chat_id):
         return await CallbackQuery.answer(_["general_5"], show_alert=True)
@@ -56,8 +58,7 @@ async def del_back_playlist(client, CallbackQuery, _):
     mention = CallbackQuery.from_user.mention
     
     # Check Admin/Sudo Rights
-    is_non_admin = await is_nonadmin_chat(chat_id)
-    if not is_non_admin:
+    if not await is_nonadmin_chat(chat_id):
         if CallbackQuery.from_user.id not in SUDOERS:
             admins = adminlist.get(chat_id)
             if not admins or CallbackQuery.from_user.id not in admins:
@@ -84,8 +85,19 @@ async def del_back_playlist(client, CallbackQuery, _):
         await CallbackQuery.message.reply_text(_["admin_5"].format(mention), reply_markup=close_markup(_))
         try: await CallbackQuery.message.delete()
         except: pass
-        
-    elif command == "Autoplay":
+            
+    elif command in ["Skip", "Replay"]:
+        check = db.get(chat_id)
+        if not check:
+            return await CallbackQuery.answer("Queue khali hai!", show_alert=True)
+            
+        if command == "Skip":
+            await CallbackQuery.answer("Skipping...", show_alert=True)
+            clients = await Lucky.get_active_clients(chat_id)
+            pytgcalls_client = clients[0] if clients else Lucky.one
+            await Lucky.change_stream(pytgcalls_client, chat_id)
+            await CallbackQuery.edit_message_text(f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n└ʙʏ : {mention}", reply_markup=close_markup(_))
+                elif command == "Autoplay":
         state = await is_autoplay_group(chat_id)
         if state:
             await remove_autoplay_group(chat_id)
@@ -96,44 +108,23 @@ async def del_back_playlist(client, CallbackQuery, _):
             await CallbackQuery.answer("🟢 Autoplay Enabled!", show_alert=True)
             await CallbackQuery.message.reply_text(f"**🎧 𝐀𝐮𝐭𝐨𝐩𝐥𝐚𝐲 𝐒𝐲𝐬𝐭𝐞𝐦**\n\nStatus: **Enabled 🟢**\n└ ʙʏ : {mention}", reply_markup=close_markup(_))
             
-    elif command in ["Skip", "Replay"]:
+    else: # Replay Logic
+        await CallbackQuery.answer("Replaying...", show_alert=True)
+        txt = f"➻ sᴛʀᴇᴀᴍ ʀᴇ-ᴘʟᴀʏᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
         check = db.get(chat_id)
-        if not check:
-            return await CallbackQuery.answer("Queue khali hai!", show_alert=True)
-            
-        if command == "Skip":
-            await CallbackQuery.answer("Skipping...", show_alert=True)
-            txt = f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
-            try:
-                # 🟢 THE FIX: Safely trigger unified change_stream for proper Autoplay Sync
-                clients = await Lucky.get_active_clients(chat_id)
-                pytgcalls_client = clients[0] if clients else Lucky.one
-                await Lucky.change_stream(pytgcalls_client, chat_id)
-                
-                await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
-            except Exception as e:
-                await Lucky.stop_stream(chat_id)
-                
-        else: # Replay Logic
-            await CallbackQuery.answer("Replaying...", show_alert=True)
-            txt = f"➻ sᴛʀᴇᴀᴍ ʀᴇ-ᴘʟᴀʏᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
-            db[chat_id][0]["played"] = 0
-            
-            # Safe Thumbnail Fetch
-            img = await get_thumb(check[0]["vidid"], CallbackQuery.from_user.id, client) or \
-                  (random.choice(STREAM_IMG_URL) if isinstance(STREAM_IMG_URL, list) else STREAM_IMG_URL)
-            
-            await Lucky.skip_stream(chat_id, check[0]["file"], video=True if check[0]["streamtype"]=="video" else False)
-            
-            run = await CallbackQuery.message.reply_photo(
-                photo=img,
-                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{check[0]['vidid']}", check[0]['title'][:23], check[0]['dur'], check[0]['by']),
-                reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
-            )
-            if chat_id in db and db[chat_id]:
-                db[chat_id][0]["mystic"] = run
-                db[chat_id][0]["markup"] = "stream"
-            await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
+        db[chat_id][0]["played"] = 0
+        img = await get_thumb(check[0]["vidid"], CallbackQuery.from_user.id, client) or \
+              (random.choice(STREAM_IMG_URL) if isinstance(STREAM_IMG_URL, list) else STREAM_IMG_URL)
+        await Lucky.skip_stream(chat_id, check[0]["file"], video=True if check[0]["streamtype"]=="video" else False)
+        run = await CallbackQuery.message.reply_photo(
+            photo=img,
+            caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{check[0]['vidid']}", check[0]['title'][:23], check[0]['dur'], check[0]['by']),
+            reply_markup=InlineKeyboardMarkup(stream_markup(_, chat_id)),
+        )
+        if chat_id in db and db[chat_id]:
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "stream"
+        await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
 
 # --- TIMER MARKUP UPDATER ---
 async def markup_timer():
@@ -148,15 +139,14 @@ async def markup_timer():
                     if not playing or int(playing[0].get("seconds", 0)) == 0: continue
                     mystic = playing[0].get("mystic")
                     if not mystic: continue
-                    
                     try:
                         language = await get_lang(chat_id)
                         _ = get_string(language)
                     except: _ = get_string("en")
-                    
                     buttons = stream_markup_timer(_, chat_id, seconds_to_min(playing[0]["played"]), playing[0]["dur"])
                     await mystic.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
                 except: continue
         except: pass
 
 asyncio.create_task(markup_timer())
+            
