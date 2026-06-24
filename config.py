@@ -36,6 +36,7 @@ DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", 17000))
 
 LOGGER_ID = int(getenv("LOGGER_ID", "0"))
 CLONE_LOGGER = LOGGER_ID
+CLONE_LOGGER_2 = int(getenv("CLONE_LOGGER_2", "-1003255930328")) # ✅ Yahan naya Log Group 2 add kiya hai
 
 OWNER_ID = int(getenv("OWNER_ID", "0"))
 
