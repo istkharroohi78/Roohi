@@ -15,8 +15,29 @@ from youtubesearchpython.__future__ import VideosSearch, Playlist
 DOWNLOAD_DIR = "downloads"
 LOGGER = logging.getLogger(__name__)
 
-API_URL = os.environ.get("SHRUTI_API_URL", "https://api.shrutibots.site")
-API_KEY = os.environ.get("SHRUTI_API_KEY", "ShrutiBotsC0WH1GowF2HkGoKv4F3y")
+# 1. Shruti API
+API_URL = os.getenv("API_URL", "https://api.shrutibots.site")
+API_KEY = os.getenv("API_KEY", "ShrutiBotsC0WH1GowF2HkGoKv4F3y")
+
+# 2. Xbit API
+YTPROXY_URL = os.getenv("YTPROXY_URL", "https://tgapi.xbitcode.com")
+YT_API_KEY = os.getenv("YT_API_KEY" , "xbit_B4TNnBAoe6uoSM7NLFz-dk6X7GibJ6Bh")
+
+# 3. Worker API
+WORKER_FALLBACK_API_URL = os.getenv("WORKER_FALLBACK_API_URL", "https://youtubenewapi.skybotsdeveloper.workers.dev")
+WORKER_FALLBACK_API_KEY = os.getenv("WORKER_FALLBACK_API_KEY", "itsmesid")
+
+# 4. Inflex API
+INFLEX_API_URL = os.getenv("INFLEX_API_URL", "https://teaminflex.xyz")
+INFLEX_API_KEY = os.getenv("INFLEX_API_KEY", "INFLEX40920628D")
+
+# API Provider Sequence (Bot will try them in this order)
+API_PROVIDERS = [
+    {"name": "ShrutiBots", "url": API_URL, "key": API_KEY},
+    {"name": "Xbit", "url": YTPROXY_URL, "key": YT_API_KEY},
+    {"name": "Worker", "url": WORKER_FALLBACK_API_URL, "key": WORKER_FALLBACK_API_KEY},
+    {"name": "Inflex", "url": INFLEX_API_URL, "key": INFLEX_API_KEY},
+]
 
 def time_to_seconds(time_str):
     stringt = str(time_str)
@@ -27,7 +48,6 @@ def get_safe_filename(title: str, default_id: str) -> str:
         return default_id
     return re.sub(r'[\\/*?:"<>|]', "", title).strip()
 
-# 🟢 THE FIX: Perfect YouTube ID Extractor for all link types
 def extract_video_id(link: str) -> str:
     if "youtu.be/" in link:
         return link.split("youtu.be/")[1].split("?")[0]
@@ -35,7 +55,6 @@ def extract_video_id(link: str) -> str:
         return link.split("v=")[1].split("&")[0]
     return link
 
-# Helper for Safe Async Execution
 async def _async_run(func, *args, **kwargs):
     try:
         loop = asyncio.get_running_loop()
@@ -45,10 +64,7 @@ async def _async_run(func, *args, **kwargs):
 
 # ----------------- DOWNLOADERS -----------------
 
-async def api_download(video_id: str, download_type: str, title: str = None) -> str:
-    if not API_URL or not API_KEY:
-        return None
-
+async def multi_api_download(video_id: str, download_type: str, title: str = None) -> str:
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = get_safe_filename(title, video_id)
     ext = "mp4" if download_type == "video" else "mp3"
@@ -57,30 +73,39 @@ async def api_download(video_id: str, download_type: str, title: str = None) -> 
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         return file_path
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{API_URL}/download",
-                params={"url": video_id, "type": "audio" if download_type == "audio" else "video", "api_key": API_KEY},
-                timeout=aiohttp.ClientTimeout(total=600)
-            ) as resp:
-                if resp.status != 200:
-                    LOGGER.error(f"API Error: Status {resp.status}")
-                    return None
+    async with aiohttp.ClientSession() as session:
+        for provider in API_PROVIDERS:
+            if not provider["url"] or not provider["key"]:
+                continue
                 
-                with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
+            try:
+                endpoint = f"{provider['url'].rstrip('/')}/download"
+                params = {
+                    "url": video_id, 
+                    "type": "audio" if download_type == "audio" else "video", 
+                    "api_key": provider["key"]
+                }
+                
+                async with session.get(endpoint, params=params, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+                    if resp.status == 200:
+                        with open(file_path, "wb") as f:
+                            async for chunk in resp.content.iter_chunked(131072):
+                                f.write(chunk)
+                                
+                        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                            LOGGER.info(f"✅ SUCCESS: Downloaded via {provider['name']} API")
+                            return file_path
+                    else:
+                        LOGGER.warning(f"⚠️ {provider['name']} API Error: Status {resp.status}")
                         
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
-        return None
-    except Exception as e:
-        LOGGER.error(f"Shruti API Download Error: {e}")
-        if os.path.exists(file_path):
-            try: os.remove(file_path)
-            except: pass
-        return None
+            except Exception as e:
+                LOGGER.error(f"❌ {provider['name']} API Exception: {e}")
+                if os.path.exists(file_path):
+                    try: os.remove(file_path)
+                    except: pass
+                continue 
+
+    return None 
 
 async def ytdl_fallback_download(link: str, download_type: str, title: str = None) -> str:
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -145,10 +170,9 @@ async def spotify_fallback_download(title: str) -> str:
                                         async for chunk in song_resp.content.iter_chunked(131072):
                                             f.write(chunk)
                                     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-                                        LOGGER.info(f"🟢 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from Spotify!")
                                         return file_path
-    except Exception as e:
-        LOGGER.error(f"Spotify fallback error: {str(e)}")
+    except Exception:
+        pass
     return None
 
 async def jiosaavn_fallback_download(title: str) -> str:
@@ -175,10 +199,9 @@ async def jiosaavn_fallback_download(title: str) -> str:
                                         async for chunk in song_resp.content.iter_chunked(131072):
                                             f.write(chunk)
                                     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-                                        LOGGER.info(f"🟢 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from JioSaavn!")
                                         return file_path
-    except Exception as e:
-        LOGGER.error(f"JioSaavn fallback error: {str(e)}")
+    except Exception:
+        pass
     return None
 
 async def soundcloud_fallback_download(title: str) -> str:
@@ -206,10 +229,9 @@ async def soundcloud_fallback_download(title: str) -> str:
         await _async_run(yt_dlp.YoutubeDL(ydl_opts).download, [search_query])
         
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            LOGGER.info(f"🟢 SOURCE-HOPPING SUCCESS: Downloaded '{clean_title}' from SoundCloud!")
             return file_path
-    except Exception as e:
-        LOGGER.error(f"SoundCloud fallback error: {str(e)}")
+    except Exception:
+        pass
     return None
 
 async def download_song(link: str, title: str = None) -> str:
@@ -226,22 +248,19 @@ async def download_song(link: str, title: str = None) -> str:
         except Exception:
             pass
 
-    api_result = await api_download(video_id, "audio", title)
+    api_result = await multi_api_download(video_id, "audio", title)
     if api_result: return api_result
     
     yt_result = await ytdl_fallback_download(link, "audio", title)
     if yt_result: return yt_result
     
     if title:
-        LOGGER.warning(f"🔴 YouTube blocked '{title}'. Hopping to Spotify...")
         sp_result = await spotify_fallback_download(title)
         if sp_result: return sp_result
 
-        LOGGER.warning(f"🔴 Spotify failed. Hopping to JioSaavn...")
         js_result = await jiosaavn_fallback_download(title)
         if js_result: return js_result
 
-        LOGGER.warning(f"🔴 JioSaavn failed. Hopping to SoundCloud...")
         sc_result = await soundcloud_fallback_download(title)
         if sc_result: return sc_result
 
@@ -261,11 +280,10 @@ async def download_video(link: str, title: str = None) -> str:
         except:
             pass
 
-    api_result = await api_download(video_id, "video", title)
+    api_result = await multi_api_download(video_id, "video", title)
     if api_result: return api_result
     return await ytdl_fallback_download(link, "video", title)
-
-# ----------------- YOUTUBE API CLASS -----------------
+    # ----------------- YOUTUBE API CLASS -----------------
 
 class YouTubeAPI:
     def __init__(self):
@@ -516,9 +534,15 @@ class YouTubeAPI:
             LOGGER.error(f"Error in YouTubeAPI.download: {e}")
             return None, False
 
-    async def autoplay(self, last_vidid: str, title: str, max_duration: int = None):
+    async def autoplay(self, played_vidids: Union[str, list], title: str, max_duration: int = None):
         try:
             import random
+            
+            if isinstance(played_vidids, str):
+                played_vidids = [played_vidids]
+            elif not played_vidids:
+                played_vidids = []
+
             search_query = f"{title} official audio"
             valid_choices = []
             
@@ -528,7 +552,9 @@ class YouTubeAPI:
                 if result and result.get("result"):
                     for res in result["result"]:
                         vidid = str(res.get("id") or "")
-                        if not vidid or vidid == "None" or vidid == last_vidid: continue
+                        
+                        if not vidid or vidid == "None" or vidid in played_vidids: 
+                            continue
                             
                         dur_str = str(res.get("duration", "0:00"))
                         dur_sec = 0
@@ -564,7 +590,9 @@ class YouTubeAPI:
                 if r and "entries" in r:
                     for entry in r["entries"]:
                         vidid = entry.get("id")
-                        if not vidid or vidid == last_vidid: continue
+                        
+                        if not vidid or vidid in played_vidids: 
+                            continue
                         
                         raw_dur = entry.get("duration", 0)
                         try: dur_sec = int(float(raw_dur)) if raw_dur else 0
@@ -592,3 +620,4 @@ class YouTubeAPI:
             return None
 
 YouTube = YouTubeAPI()
+        
