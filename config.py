@@ -81,7 +81,6 @@ TG_VIDEO_FILESIZE_LIMIT = int(getenv("TG_VIDEO_FILESIZE_LIMIT", "5242880000"))
 STRING1 = getenv("STRING_SESSION", "")
 STRING2 = getenv("STRING_SESSION2", "")
 
-START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/n22tbs.jpg").split()
 START_IMG_URL = getenv("START_IMG_URL", "https://files.catbox.moe/nklcvg.jpg").split()
 HELP_IMG_URL = getenv("HELP_IMG_URL", "https://files.catbox.moe/dk92ep.jpg").split()
 PING_IMG_URL = getenv("PING_IMG_URL", "https://files.catbox.moe/wktt8l.jpg").split()
