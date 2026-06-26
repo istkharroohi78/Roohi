@@ -201,7 +201,7 @@ def get_random_start_image():
         if isinstance(START_IMG_URL, list):
             return random.choice(START_IMG_URL)
         return START_IMG_URL
-    return "https://telegra.ph/file/2e3d368e77c449c287430.jpg"
+    return "https://files.catbox.moe/hjqfgk.jpg"
 
 def format_link(val):
     if not val or str(val).strip() in ["", "none", "None"]:
@@ -391,15 +391,20 @@ async def start_pm(client, message: Message, _):
         except:
             caption = custom_caption
     else:
-        formatted_text = (
-            f"Hey {user_mention} 👋\n\n"
-            f"⦿ THIS IS {bot_mention} !\n\n"
-            f"➻ A FAST & POWERFUL TELEGRAM MUSIC PLAYER BOT.\n\n"
-            f"──────────────────\n"
-            f"✦ POWERED BY » {bot_mention}"
+       
+        Formatted_text = (
+    f"Hey {user_mention} 👋\n\n"
+    f"⦿ **ᴛʜɪs ɪs {bot_mention} 🎶 !**\n\n"
+    f"➻ **ᴧ ᴩʀєϻɪυϻ ᴛєʟєɢʀᴧϻ ϻυsɪᴄ ᴩʟᴧʏєʀ**\n"
+    f"➻ **ησ ʟᴧɢ | ᴧᴅ-ғʀєє | ʜɪ-ʀєs ᴧυᴅɪσ**\n"
+    f"➻ **24x7 ᴩʟᴧʏᴛɪϻє | sϻσσᴛʜ ᴩєʀғσʀϻᴧηᴄє**\n\n"
+    f"➻ **ᴄʟɪᴄᴋ ση ᴛʜє ʜєʟᴩ ʙυᴛᴛση ᴛσ ɢєᴛ ɪηғσ**\n"
+    f"    **ᴧʙσυᴛ ϻʏ ϻσᴅυʟєs ᴧηᴅ ᴄσϻϻᴧηᴅs...!**\n\n"
+    f"──────────────────\n"
+    
         )
-        caption = f"<blockquote expandable>{formatted_text}</blockquote>"
-
+        
+        
     # 🔥 FIX: Removed message_effect_id entirely to prevent Pyrogram TypeError
     if start_video:
         try:
