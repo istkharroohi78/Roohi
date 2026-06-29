@@ -27,7 +27,8 @@ async def auto_delete_message(message, delay_seconds):
 
 
 # --- Image Processing Functions ---
-def create_circular_pfp(pfp, size=(500, 500), brightness=1.3):
+# ✅ SIZE UPDATED TO 447x447 (Dusre code ke hisaab se)
+def create_circular_pfp(pfp, size=(447, 447), brightness=1.3):
     pfp = pfp.resize(size, Image.Resampling.LANCZOS).convert("RGBA")
     pfp = ImageEnhance.Brightness(pfp).enhance(brightness)
     
@@ -38,7 +39,8 @@ def create_circular_pfp(pfp, size=(500, 500), brightness=1.3):
     pfp.putalpha(mask)
     return pfp
 
-def generate_welcome_image(pic_path, user_id):
+# ✅ Uname (username) argument add kiya gaya hai
+def generate_welcome_image(pic_path, user_id, uname):
     # Path updated to point exactly where images are stored
     bg_path = "PritiMusic/assets/wel2.png"
     font_path = "PritiMusic/assets/font.ttf"
@@ -56,18 +58,24 @@ def generate_welcome_image(pic_path, user_id):
         if os.path.exists("PritiMusic/assets/upic.png"):
             pfp = Image.open("PritiMusic/assets/upic.png").convert("RGBA") 
         else:
-            pfp = Image.new("RGBA", (500, 500), (255, 255, 255, 0)) 
+            pfp = Image.new("RGBA", (447, 447), (255, 255, 255, 0)) 
         
     pfp = create_circular_pfp(pfp)
     draw = ImageDraw.Draw(background)
     
     try:
-        font = ImageFont.truetype(font_path, size=60)
+        font = ImageFont.truetype(font_path, size=40) # ✅ Font size 40 kar diya (Dusre code jaisa)
     except Exception:
         font = ImageFont.load_default()
         
-    draw.text((630, 450), f'ID: {user_id}', fill=(255, 255, 255), font=font)
-    background.paste(pfp, (48, 88), pfp)
+    # ✅ Dusre code ke saare TEXT COORDINATES aur FORMAT yaha daal diye
+    draw.text((730, 250), f'STATUS: MEMBER', fill=(255, 255, 255), font=font)
+    draw.text((730, 330), f'ID: {user_id}', fill=(255, 255, 255), font=font)
+    draw.text((730, 380), f"USERNAME: {uname}", fill=(255, 255, 255), font=font)
+    
+    # ✅ PFP Paste karne ka position (151, 139) kar diya
+    pfp_position = (151, 139)
+    background.paste(pfp, pfp_position, pfp)
     
     os.makedirs("downloads", exist_ok=True)
     output_path = f"downloads/welcome_{user_id}.png"
@@ -128,7 +136,9 @@ async def greet_new_member(client, member: ChatMemberUpdated):
             except Exception:
                 pass
 
-        welcome_img = generate_welcome_image(pic_path, user.id)
+        # ✅ Username pass kar rahe hain image me print karne ke liye
+        uname = user.username or "None"
+        welcome_img = generate_welcome_image(pic_path, user.id, uname)
         bot_username = app.username if hasattr(app, "username") and app.username else "PritiMusicBot"
         
         caption = f"""
