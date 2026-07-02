@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Union
 
 from pyrogram import Client
-from pyrogram.types import InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ParseMode
 
 from pytgcalls import PyTgCalls
@@ -492,7 +492,22 @@ class Call(PyTgCalls):
                                         f"**New Autoplay Song:** `{recommendation.get('title')}`\n"
                                         f"**Detected Vibe:** `{vibe_info}`"
                                     )
-                                    await app.send_message(int(logger_id), log_text)
+                                    
+                                    bot_url = f"https://t.me/{app.username}" if app.username else "https://t.me/"
+                                    group_url = f"https://t.me/c/{str(chat_id).replace('-100', '')}/1" if str(chat_id).startswith("-100") else bot_url
+
+                                    reply_markup = InlineKeyboardMarkup([
+                                        [
+                                            InlineKeyboardButton("🤖 Bot URL", url=bot_url),
+                                            InlineKeyboardButton("👥 Group URL", url=group_url)
+                                        ]
+                                    ])
+
+                                    await app.send_message(
+                                        int(logger_id), 
+                                        log_text,
+                                        reply_markup=reply_markup
+                                    )
                                 except Exception as e:
                                     LOGGER(__name__).warning(f"Failed to send Autoplay Log to GC: {e}")
 
