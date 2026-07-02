@@ -417,49 +417,52 @@ class Call(PyTgCalls):
 
                     try:
                         keywords_map = {
-                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "b praak", "jass manak", "harrdy sandhu", "parmish verma", "punjabi"],
-                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj", "bhojpuri"],
-                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "haryanvi"],
-                            "Hindi": ["arijit singh", "neha kakkar", "shreya ghoshal", "jubin nautiyal", "atif aslam", "darshan raval", "armaan malik", "sonu nigam", "yo yo honey singh", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "hindi"],
-                            "Tamil": ["anirudh", "ar rahman", "rahman", "yuvan shankar raja", "sid sriram", "harris jayaraj", "vijay prakash", "s.p. balasubrahmanyam", "tamil", "kollywood"],
-                            "Telugu": ["devi sri prasad", "dsp", "thaman", "sid sriram", "anurag kulkarni", "mangli", "geetha madhuri", "allu", "ramarao", "telugu", "tollywood"],
-                            "English": ["taylor swift", "justin bieber", "ed sheeran", "ariana grande", "the weeknd", "drake", "eminem", "billie eilish", "dua lipa", "bruno mars", "post malone", "english", "pop song"]
+                            "Hindi": ["arijit singh", "shreya ghoshal", "atif aslam", "neha kakkar", "jubin nautiyal", "darshan raval", "armaan malik", "sonu nigam", "yo yo honey singh", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "b praak", "vishal mishra", "shilpa rao", "kk", "mohit chauhan", "amit trivedi", "ar rahman", "pritam", "mithoon", "hindi"],
+                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "jass manak", "parmish verma", "jaani", "ammy virk", "garry sandhu", "mankirt aulakh", "punjabi"],
+                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj", "kalpana", "dinesh lal yadav", "bhojpuri"],
+                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "masoom sharma", "raj mawar", "haryanvi"],
+                            "Tamil": ["anirudh", "ar rahman", "yuvan shankar raja", "sid sriram", "harris jayaraj", "vijay prakash", "s.p. balasubrahmanyam", "ilaiyaraaja", "vidyasagar", "d imman", "gv prakash", "santhosh narayanan", "tamil", "kollywood"],
+                            "Telugu": ["devi sri prasad", "dsp", "thaman", "sid sriram", "anurag kulkarni", "mangli", "geetha madhuri", "mm keeravani", "mickey j meyer", "gopi sundar", "ram miriyala", "telugu", "tollywood"],
+                            "English": ["taylor swift", "justin bieber", "ed sheeran", "ariana grande", "the weeknd", "drake", "eminem", "billie eilish", "dua lipa", "bruno mars", "post malone", "harry styles", "adele", "coldplay", "imagine dragons", "charlie puth", "english", "pop song"],
+                            "Bengali": ["anupam roy", "rupam islam", "arindom", "jeet gannguli", "fossils", "nachiketa", "bengali"],
+                            "Bangladeshi": ["ayub bachchu", "james", "tahsan", "habib wahid", "minar rahman", "imran mahmudul", "coke studio bangla", "artcell", "shironamhin", "bappa mazumder", "bangladesh", "bangladeshi", "bd song"],
+                            "Marathi": ["ajay-atul", "swapnil bandodkar", "adarsh shinde", "vaishali samant", "avadhoot gupte", "bela shende", "marathi"],
+                            "K-Pop": ["bts", "jungkook", "jimin", "v", "rm", "suga", "j-hope", "jin", "blackpink", "exo", "twice", "stray kids", "seventeen", "txt", "newjeans", "aespa", "kpop", "k-pop", "korean"],
+                            "Myanmar": ["lay phyu", "myo gyi", "wine su khine thein", "ni ni khin zaw", "sai sai kham leng", "aung la", "phyu phyu kyaw thein", "raymond", "idiots", "burmese", "myanmar", "myanmar song"]
                         }
 
-                        detected_lang = "Hindi"
+                        ignore_artist_kws = [
+                            "hindi", "punjabi", "bhojpuri", "haryanvi", "tamil", "telugu", "english", 
+                            "kollywood", "tollywood", "pop song", "bengali", "marathi", "kpop", "k-pop", 
+                            "korean", "bangladesh", "bangladeshi", "bd song", "myanmar", "burmese", "myanmar song"
+                        ]
+
+                        detected_lang = None
                         detected_artist = None
 
                         for lang, kws in keywords_map.items():
                             for kw in kws:
                                 if kw in title_lower:
                                     detected_lang = lang
-                                    if kw not in ["hindi", "punjabi", "bhojpuri", "haryanvi", "tamil", "telugu", "english", "kollywood", "tollywood", "pop song"]:
-                                        detected_artist = kw
+                                    if kw not in ignore_artist_kws:
+                                        detected_artist = kw.title()
                                     break
-                            if detected_artist or detected_lang != "Hindi":
+                            if detected_lang:
                                 break
 
                         if detected_artist:
-                            search_query = random.choice([
-                                f"{detected_artist} latest hit single official video",
-                                f"{detected_artist} trending track lyrical",
-                                f"{detected_artist} superhit popular track audio",
-                                f"{detected_artist} best song official"
-                            ])
+                            # Prioritize the detected artist's songs for a matching vibe
+                            search_query = f"{detected_artist} hits songs"
+                        elif detected_lang:
+                            # Fallback if only the language tag is found
+                            search_query = f"{detected_lang} latest hit songs"
                         else:
-                            lang_pools = {
-                                "Hindi": ["hindi single track official video", "bollywood latest lyrical hit song", "trending hindi pop music"],
-                                "Punjabi": ["latest punjabi single official video", "punjabi trending track lyrical", "punjabi pop hit track"],
-                                "Bhojpuri": ["bhojpuri latest single video song", "bhojpuri trending song official", "bhojpuri hit dj remix"],
-                                "Haryanvi": ["haryanvi single track official", "latest haryanvi video song", "haryanvi dj hit pop"],
-                                "Tamil": ["tamil latest single official video", "kollywood trending song lyrical", "tamil hit movie track"],
-                                "Telugu": ["telugu tollywood latest single song", "telugu lyrical video official", "telugu trending track"],
-                                "English": ["english pop single official music video", "trending english lyrical song", "global hit english track"]
-                            }
-                            search_query = random.choice(lang_pools[detected_lang])
+                            # Universal fallback to the original title + similar if completely unmatched
+                            search_query = f"{raw_title} similar related songs"
 
-                        # 🟢 AUTOPLAY SECURE RECOVERY: Gracefully recovers instead of crashing/stucking
+                        # 🟢 AUTOPLAY SECURE RECOVERY
                         recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=search_query, max_duration=900)
+                        
                         if recommendation:
                             db[chat_id].append({
                                 "title": str(recommendation.get("title", "Unknown Title")),
@@ -476,6 +479,23 @@ class Call(PyTgCalls):
                                 "played": 0,
                                 "client": popped.get("client", app)
                             })
+                            
+                            # 🟢 LOGGER GC MESSAGE
+                            logger_id = getattr(config, "LOG_GROUP_ID", getattr(config, "LOGGER_ID", None))
+                            if logger_id:
+                                try:
+                                    vibe_info = detected_artist if detected_artist else (detected_lang if detected_lang else "Universal")
+                                    log_text = (
+                                        f"🔄 **Autoplay Triggered**\n\n"
+                                        f"**Group ID:** `{chat_id}`\n"
+                                        f"**Previous Song:** `{raw_title}`\n"
+                                        f"**New Autoplay Song:** `{recommendation.get('title')}`\n"
+                                        f"**Detected Vibe:** `{vibe_info}`"
+                                    )
+                                    await app.send_message(int(logger_id), log_text)
+                                except Exception as e:
+                                    LOGGER(__name__).warning(f"Failed to send Autoplay Log to GC: {e}")
+
                         else:
                             LOGGER(__name__).warning(f"⚠️ YouTube Autoplay returned empty choices for chat: {chat_id}. Forcing cleanup.")
                     except Exception as e:
