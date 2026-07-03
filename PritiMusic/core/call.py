@@ -502,7 +502,7 @@ class Call(PyTgCalls):
                                     reply_markup = InlineKeyboardMarkup([
                                         [
                                             InlineKeyboardButton("👥 Playing Group", url=group_url),
-                                            InlineKeyboardButton(f"🤖 {bot_name}", url=bot_url)
+                                            InlineKeyboardButton(f"🤖 {app.name}", url=bot_url)
                                         ]
                                     ])
 
