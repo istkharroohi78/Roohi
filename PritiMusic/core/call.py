@@ -214,10 +214,8 @@ class Call(PyTgCalls):
             except: pass
 
     async def stop_stream(self, chat_id: int, assistant_type=None):
-        try:
-            chat_id = int(chat_id)
-        except:
-            pass
+        try: chat_id = int(chat_id)
+        except: pass
             
         try: await _clear_(chat_id)
         except: pass
@@ -240,10 +238,8 @@ class Call(PyTgCalls):
             del self.active_clients[chat_id]
 
     async def stop_stream_force(self, chat_id: int):
-        try:
-            chat_id = int(chat_id)
-        except:
-            pass
+        try: chat_id = int(chat_id)
+        except: pass
             
         active_assistants = await self.get_active_clients(chat_id)
         for assistant in active_assistants:
@@ -299,8 +295,7 @@ class Call(PyTgCalls):
         
         if str(db[chat_id][0]["file"]) == str(file_path):
             for assistant in assistants:
-                try:
-                    await self._safe_change_stream(assistant, chat_id, out, is_video, extra_args)
+                try: await self._safe_change_stream(assistant, chat_id, out, is_video, extra_args)
                 except: pass
         else: raise AssistantErr("Umm")
         
@@ -344,7 +339,6 @@ class Call(PyTgCalls):
             else:
                 assistant_to_join = PyTgCalls(userbot, cache_duration=100)
                 
-                # 🟢 THE CLONE EVENT FIX: Attaching the stream listener to dynamic clones
                 @assistant_to_join.on_update()
                 async def clone_stream_handler(client, update):
                     try:
@@ -389,7 +383,7 @@ class Call(PyTgCalls):
             except: pass
 
     async def change_stream(self, client, chat_id):
-        # 🟢 ROUTING FIX: Synchronize client targeting for clones
+        # 🟢 ROUTING FIX
         active_assistants = await self.get_active_clients(chat_id)
         client = active_assistants[0] if active_assistants else client
 
@@ -410,35 +404,33 @@ class Call(PyTgCalls):
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 auto_on = await is_autoplay_group(chat_id)
                 if auto_on and popped:
-                    LOGGER(__name__).info(f"🔄 Autoplay active searching next song for {chat_id}")
+                    LOGGER(__name__).info(f"🔄 Spotify-Style Autoplay triggered for {chat_id}")
                     raw_title = popped.get("title", "Unknown Title")
                     title_lower = str(raw_title).lower()
                     last_vidid = str(popped.get("vidid", ""))
 
                     try:
                         keywords_map = {
-                            "Hindi": ["arijit singh", "shreya ghoshal", "atif aslam", "neha kakkar", "jubin nautiyal", "darshan raval", "armaan malik", "sonu nigam", "yo yo honey singh", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "b praak", "vishal mishra", "shilpa rao", "kk", "mohit chauhan", "amit trivedi", "ar rahman", "pritam", "mithoon", "hindi"],
-                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "jass manak", "parmish verma", "jaani", "ammy virk", "garry sandhu", "mankirt aulakh", "punjabi"],
-                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj", "kalpana", "dinesh lal yadav", "bhojpuri"],
-                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "masoom sharma", "raj mawar", "haryanvi"],
-                            "Tamil": ["anirudh", "ar rahman", "yuvan shankar raja", "sid sriram", "harris jayaraj", "vijay prakash", "s.p. balasubrahmanyam", "ilaiyaraaja", "vidyasagar", "d imman", "gv prakash", "santhosh narayanan", "tamil", "kollywood"],
-                            "Telugu": ["devi sri prasad", "dsp", "thaman", "sid sriram", "anurag kulkarni", "mangli", "geetha madhuri", "mm keeravani", "mickey j meyer", "gopi sundar", "ram miriyala", "telugu", "tollywood"],
-                            "English": ["taylor swift", "justin bieber", "ed sheeran", "ariana grande", "the weeknd", "drake", "eminem", "billie eilish", "dua lipa", "bruno mars", "post malone", "harry styles", "adele", "coldplay", "imagine dragons", "charlie puth", "english", "pop song"],
-                            "Bengali": ["anupam roy", "rupam islam", "arindom", "jeet gannguli", "fossils", "nachiketa", "bengali"],
-                            "Bangladeshi": ["ayub bachchu", "james", "tahsan", "habib wahid", "minar rahman", "imran mahmudul", "coke studio bangla", "artcell", "shironamhin", "bappa mazumder", "bangladesh", "bangladeshi", "bd song"],
-                            "Marathi": ["ajay-atul", "swapnil bandodkar", "adarsh shinde", "vaishali samant", "avadhoot gupte", "bela shende", "marathi"],
-                            "K-Pop": ["bts", "jungkook", "jimin", "v", "rm", "suga", "j-hope", "jin", "blackpink", "exo", "twice", "stray kids", "seventeen", "txt", "newjeans", "aespa", "kpop", "k-pop", "korean"],
-                            "Myanmar": ["lay phyu", "myo gyi", "wine su khine thein", "ni ni khin zaw", "sai sai kham leng", "aung la", "phyu phyu kyaw thein", "raymond", "idiots", "burmese", "myanmar", "myanmar song"]
+                            "Hindi": ["arijit singh", "shreya ghoshal", "atif aslam", "neha kakkar", "jubin nautiyal", "darshan raval", "armaan malik", "sonu nigam", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "b praak", "vishal mishra", "shilpa rao", "kk", "mohit chauhan", "ar rahman", "pritam", "mithoon"],
+                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "jass manak", "parmish verma", "jaani", "ammy virk", "garry sandhu"],
+                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj"],
+                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "masoom sharma"],
+                            "Tamil": ["anirudh", "ar rahman", "yuvan shankar raja", "sid sriram", "harris jayaraj", "ilaiyaraaja"],
+                            "Telugu": ["devi sri prasad", "dsp", "thaman", "sid sriram", "anurag kulkarni", "mangli"],
+                            "English": ["taylor swift", "justin bieber", "ed sheeran", "ariana grande", "the weeknd", "drake", "eminem", "billie eilish", "dua lipa", "post malone"]
                         }
 
-                        ignore_artist_kws = [
-                            "hindi", "punjabi", "bhojpuri", "haryanvi", "tamil", "telugu", "english", 
-                            "kollywood", "tollywood", "pop song", "bengali", "marathi", "kpop", "k-pop", 
-                            "korean", "bangladesh", "bangladeshi", "bd song", "myanmar", "burmese", "myanmar song"
-                        ]
+                        ignore_artist_kws = ["hindi", "punjabi", "bhojpuri", "haryanvi", "tamil", "telugu", "english"]
 
                         detected_lang = None
                         detected_artist = None
+                        detected_mood = None
+                        
+                        moods_list = ["sad", "love", "romantic", "lofi", "chill", "party", "mashup", "emotional", "heartbreak", "dance", "dj"]
+                        for mood in moods_list:
+                            if mood in title_lower:
+                                detected_mood = mood
+                                break
 
                         for lang, kws in keywords_map.items():
                             for kw in kws:
@@ -450,25 +442,33 @@ class Call(PyTgCalls):
                             if detected_lang:
                                 break
 
+                        # 🟢 SPOTIFY RADIO STYLE QUERY BUILDER
+                        # Adding "audio track" avoids 1-hour compilations and forces single songs
+                        query_parts = []
                         if detected_artist:
-                            # Prioritize the detected artist's songs for a matching vibe
-                            search_query = f"{detected_artist} hits songs"
-                        elif detected_lang:
-                            # Fallback if only the language tag is found
-                            search_query = f"{detected_lang} latest hit songs"
+                            query_parts.append(detected_artist)
+                        if detected_lang and not detected_artist:
+                            query_parts.append(detected_lang)
+                            
+                        if query_parts:
+                            if detected_mood:
+                                query_parts.append(detected_mood)
+                            # Key change: searching for "audio track" / "single" like Spotify
+                            query_parts.append("audio track")
+                            search_query = " ".join(query_parts)
                         else:
-                            # Universal fallback to the original title + similar if completely unmatched
-                            search_query = f"{raw_title} similar related songs"
+                            # Rely on YouTube's exact algorithm to find the literal "Next Track"
+                            search_query = f"More like {raw_title} audio track"
 
-                        # 🟢 AUTOPLAY SECURE RECOVERY
-                        recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=search_query, max_duration=900)
+                        # Use the algorithmic recommendation (last_vidid) as primary, with the smart search as the filter/fallback
+                        recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=search_query, max_duration=600) # Restricted max_dur to 10 mins to avoid jukeboxes
                         
                         if recommendation:
                             db[chat_id].append({
                                 "title": str(recommendation.get("title", "Unknown Title")),
                                 "dur": recommendation.get("duration_min", "0:00"),
                                 "streamtype": popped.get("streamtype", "audio") if popped else "audio",
-                                "by": "Autoplay 🟢",
+                                "by": "Spotify Radio 🟢",
                                 "user_id": 0,
                                 "chat_id": chat_id,
                                 "file": f"vid_{recommendation.get('vidid', '')}",
@@ -480,17 +480,20 @@ class Call(PyTgCalls):
                                 "client": popped.get("client", app)
                             })
                             
-                            # 🟢 LOGGER GC MESSAGE
                             logger_id = getattr(config, "LOG_GROUP_ID", getattr(config, "LOGGER_ID", None))
                             if logger_id:
                                 try:
-                                    vibe_info = detected_artist if detected_artist else (detected_lang if detected_lang else "Universal")
+                                    artist_or_lang = " / ".join(filter(None, [detected_artist, detected_lang]))
+                                    if not artist_or_lang:
+                                        artist_or_lang = "Algorithmic Radio"
+                                        
                                     log_text = (
-                                        f"🔄 **Autoplay Triggered**\n\n"
+                                        f"📻 **Spotify-Style Radio Active**\n\n"
                                         f"**Group ID:** `{chat_id}`\n"
-                                        f"**Previous Song:** `{raw_title}`\n"
-                                        f"**New Autoplay Song:** `{recommendation.get('title')}`\n"
-                                        f"**Detected Vibe:** `{vibe_info}`"
+                                        f"**Seed Track:** `{raw_title}`\n"
+                                        f"**Now Playing:** `{recommendation.get('title')}`\n"
+                                        f"**Artist/Genre Focus:** `{artist_or_lang}`\n"
+                                        f"**Vibe Focus:** `{detected_mood.title() if detected_mood else 'Auto-Match'}`"
                                     )
                                     
                                     bot_url = f"https://t.me/{app.username}" if app.username else "https://t.me/"
@@ -498,8 +501,8 @@ class Call(PyTgCalls):
 
                                     reply_markup = InlineKeyboardMarkup([
                                         [
-                                            InlineKeyboardButton("🤖 Bot URL", url=bot_url),
-                                            InlineKeyboardButton("👥 Group URL", url=group_url)
+                                            InlineKeyboardButton("👥 Playing Group", url=group_url),
+                                            InlineKeyboardButton(f"🤖 {bot_name}", url=bot_url)
                                         ]
                                     ])
 
@@ -717,4 +720,4 @@ class Call(PyTgCalls):
         if getattr(config, "STRING4", None): self.four.on_update()(stream_handler)
         if getattr(config, "STRING5", None): self.five.on_update()(stream_handler)
 
-Lucky = Call()
+        Lucky = Call()
