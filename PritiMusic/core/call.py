@@ -720,4 +720,4 @@ class Call(PyTgCalls):
         if getattr(config, "STRING4", None): self.four.on_update()(stream_handler)
         if getattr(config, "STRING5", None): self.five.on_update()(stream_handler)
 
-        Lucky = Call()
+Lucky = Call()
