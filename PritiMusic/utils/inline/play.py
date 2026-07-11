@@ -31,7 +31,7 @@ def create_btn(text, cb=None, url=None, style=ButtonStyle.PRIMARY, no_emoji=Fals
 def add_me_button(style):
     return create_btn(
         text="ᴀᴅᴅ ᴍᴇ", 
-        url="https://t.me/SizzuMusicBot?startgroup=true",
+        url=f"https://t.me/{app.username}?startgroup=true",
         style=style
     )
 
@@ -126,7 +126,8 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
         ],
     ]
     return buttons
-    def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
+
+def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     query = f"{query[:20]}"
     s_map = get_style_map()
     buttons = [
@@ -337,4 +338,3 @@ def panel_markup_clone(_, vidid, chat_id, played, dur):
         ]
     ]
     return buttons
-    
