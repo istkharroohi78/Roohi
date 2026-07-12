@@ -38,7 +38,6 @@ NEON_COLORS = [
     (255, 220, 0),    # Neon Yellow
     (20, 100, 255)    # Neon Blue
 ]
-
 # ----------------- HELPER FUNCTIONS ----------------- #
 
 def fit_cover(image, size):
@@ -96,8 +95,8 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
         draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
     # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
-
-async def get_thumb(videoid, user_id=None):
+# 👇 YAHAN MAIN FIX HAI: 'app=None' add kiya gaya hai taaki 3 arguments wala TypeError na aaye
+async def get_thumb(videoid, user_id=None, app=None):
     os.makedirs(CACHE_DIR, exist_ok=True)
     cache_path = os.path.join(CACHE_DIR, f"{videoid}_{user_id}_premium_v6.png")
     
@@ -140,7 +139,7 @@ async def get_thumb(videoid, user_id=None):
 
         background = fit_cover(source_image, CANVAS_SIZE)
         
-        # 🟢 डार्क सिनेमैटिक ब्लर (Modified for attractive look)
+        # 🟢 डार्क सिनेमैटिक ब्लर
         background = background.filter(ImageFilter.GaussianBlur(65))
         background = ImageEnhance.Brightness(background).enhance(0.20)
         background = ImageEnhance.Color(background).enhance(1.2)
