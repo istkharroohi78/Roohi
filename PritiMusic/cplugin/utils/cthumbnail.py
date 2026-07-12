@@ -70,34 +70,7 @@ def load_font(path, size):
 def format_views(view_count_str):
     try:
         views_num = int(re.sub(r"\D", "", str(view_count_str)))
-        if views_num >= 1_000_000_000:
-            return f"{views_num / 1_000_000_000:.1f} B"
-        elif views_num >= 1_000_000:
-            return f"{views_num // 1_000_000} M"
-        elif views_num >= 1_000:
-            return f"{views_num // 1_000} K"
-        return str(views_num)
-    except:
-        return "Unknown"
-
-def trim_text(text: str, limit: int) -> str:
-    clean_text = " ".join(str(text or "").split())
-    if len(clean_text) <= limit:
-        return clean_text
-    return clean_text[: max(limit - 3, 0)].rstrip() + "..."
-    
-def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
-    if icon == "prev":
-        draw.polygon([(cx + 12, cy - 14), (cx - 2, cy), (cx + 12, cy + 14)], fill=fill)
-        draw.polygon([(cx - 2, cy - 14), (cx - 16, cy), (cx - 16, cy + 14)], fill=fill)
-        draw.rounded_rectangle([(cx - 22, cy - 14), (cx - 16, cy + 14)], radius=2, fill=fill)
-    elif icon == "pause":
-        draw.rounded_rectangle([(cx - 12, cy - 16), (cx - 4, cy + 16)], radius=3, fill=fill)
-        draw.rounded_rectangle([(cx + 4, cy - 16), (cx + 12, cy + 16)], radius=3, fill=fill)
-    elif icon == "next":
-        draw.polygon([(cx - 12, cy - 14), (cx + 2, cy), (cx - 12, cy + 14)], fill=fill)
-        draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
-        draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
+        if views_num >= 1_000_000_
         # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
 # 👇 YAHAN MAIN FIX HAI: 'app=None' add kiya aur naam 'get_thumb' kar diya
 async def get_thumb(videoid, user_id=None, app=None):
@@ -152,12 +125,12 @@ async def get_thumb(videoid, user_id=None, app=None):
         background = ImageEnhance.Color(background).enhance(1.2)
         scene = background.copy()
         
-        # 🟢 Fonts 
-        font_title = load_font(TITLE_FONT_PATH, 42)
-        font_stats_label = load_font(META_FONT_PATH, 32)
-        font_stats_value = load_font(TITLE_FONT_PATH, 32)
-        font_pill = load_font(TITLE_FONT_PATH, 24)
-        font_time = load_font(META_FONT_PATH, 22)
+        # 🟢 Fonts (Size thoda badhaya gaya hai Bold look ke liye)
+        font_title = load_font(TITLE_FONT_PATH, 46)
+        font_stats_label = load_font(META_FONT_PATH, 34)
+        font_stats_value = load_font(TITLE_FONT_PATH, 34)
+        font_pill = load_font(TITLE_FONT_PATH, 26)
+        font_time = load_font(META_FONT_PATH, 24)
 
         # 1. LEFT SIDE: SQUARE ART CARD WITH SELECTED GLOW
         art_size = 520 
@@ -180,30 +153,30 @@ async def get_thumb(videoid, user_id=None, app=None):
         
         draw.rounded_rectangle([(art_x, art_y), (art_x + art_size, art_y + art_size)], radius=35, outline=theme_color, width=5)
 
-        # 2. RIGHT SIDE: NOW PLAYING PILL
+        # 2. RIGHT SIDE: NOW PLAYING PILL (Bold Text)
         right_x = 650
         pill_w = 230
         pill_h = 45
         draw.rounded_rectangle([(right_x, art_y), (right_x + pill_w, art_y + pill_h)], radius=20, fill=theme_color)
-        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill)
+        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill, stroke_width=1, stroke_fill=(0, 0, 0))
 
-        # 3. TITLE & NEON LINE
+        # 3. TITLE & NEON LINE (Bold Title)
         title_y = art_y + 80
-        draw.text((right_x, title_y), title, fill=WHITE, font=font_title)
-        draw.line([(right_x, title_y + 60), (1200, title_y + 60)], fill=theme_color, width=3)
+        draw.text((right_x, title_y), title, fill=WHITE, font=font_title, stroke_width=2, stroke_fill=WHITE)
+        draw.line([(right_x, title_y + 65), (1200, title_y + 65)], fill=theme_color, width=4)
 
-        # 4. STATS (Duration, Views, Player)
+        # 4. STATS (Bold Labels & Values)
         stat_y = title_y + 110
         spacing = 55
         
-        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
         
-        draw.text((right_x, stat_y + spacing), "Views:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y + spacing), f"{views_str} views", fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + spacing), "Views:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y + spacing), f"{views_str} views", fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
         
-        draw.text((right_x, stat_y + spacing*2), "Artist:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y + spacing*2), f"{channel}", fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + spacing*2), "Artist:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y + spacing*2), f"{channel}", fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
 
         # 5. GLOWING PROGRESS BAR
         bar_y = stat_y + spacing*3 + 30
@@ -222,7 +195,7 @@ async def get_thumb(videoid, user_id=None, app=None):
         draw.rounded_rectangle([(right_x, bar_y), (right_x + prog_w, bar_y + 8)], radius=3, fill=theme_color)
         draw.ellipse([(right_x + prog_w - 9, bar_y - 6), (right_x + prog_w + 9, bar_y + 14)], fill=WHITE)
         
-        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time)
+        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time, stroke_width=1, stroke_fill=WHITE)
         
         # 🟢 PILLOW TEXT SIZE FALLBACK FIX
         try:
@@ -233,7 +206,7 @@ async def get_thumb(videoid, user_id=None, app=None):
             except AttributeError:
                 dur_w = 40
                 
-        draw.text((right_x + bar_w - dur_w, bar_y + 22), duration, fill=WHITE, font=font_time)
+        draw.text((right_x + bar_w - dur_w, bar_y + 22), duration, fill=WHITE, font=font_time, stroke_width=1, stroke_fill=WHITE)
 
         # 6. MEDIA CONTROLS
         ctrl_y = bar_y + 70
@@ -258,4 +231,4 @@ async def get_thumb(videoid, user_id=None, app=None):
         except:
             pass
         return YOUTUBE_IMG_URL
-    
+        
