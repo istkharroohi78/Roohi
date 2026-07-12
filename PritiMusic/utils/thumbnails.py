@@ -8,9 +8,13 @@ import aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from youtubesearchpython.__future__ import VideosSearch
-
 from config import YOUTUBE_IMG_URL
-from PritiMusic.core.dir import CACHE_DIR
+
+# 🟢 IMPORT ERROR FIX: Agar CACHE_DIR dir.py mein nahi mila, toh crash nahi hoga
+try:
+    from PritiMusic.core.dir import CACHE_DIR
+except ImportError:
+    CACHE_DIR = "cache"
 
 LOGGER = __import__('logging').getLogger(__name__)
 
@@ -20,8 +24,8 @@ try:
 except AttributeError:
     LANCZOS = Image.LANCZOS
 
-TITLE_FONT_PATH = "VIVAANXMUSIC/assets/font2.ttf"
-META_FONT_PATH = "VIVAANXMUSIC/assets/font.ttf"
+TITLE_FONT_PATH = "PritiMusic/assets/font2.ttf"
+META_FONT_PATH = "PritiMusic/assets/font.ttf"
 CANVAS_SIZE = (1280, 720)
 
 TEXT_GRAY = (180, 180, 180)
@@ -91,8 +95,7 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         draw.polygon([(cx - 12, cy - 14), (cx + 2, cy), (cx - 12, cy + 14)], fill=fill)
         draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
         draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
-
-# ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
+    # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
 
 async def get_thumb(videoid, user_id=None):
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -123,9 +126,9 @@ async def get_thumb(videoid, user_id=None):
         async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
             async with session.get(thumbnail_url) as resp:
                 if resp.status == 200:
-                    f = await aiofiles.open(temp_thumb_path, mode="wb")
-                    await f.write(await resp.read())
-                    await f.close()
+                    # 🟢 FILE HANDLING FIX: async with use kiya hai to close automatic ho jayega
+                    async with aiofiles.open(temp_thumb_path, mode="wb") as f:
+                        await f.write(await resp.read())
                 else:
                     return YOUTUBE_IMG_URL
 
@@ -225,10 +228,16 @@ async def get_thumb(videoid, user_id=None):
         draw.ellipse([(right_x + prog_w - 9, bar_y - 6), (right_x + prog_w + 9, bar_y + 14)], fill=WHITE)
         
         draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time)
+        
+        # 🟢 PILLOW TEXT SIZE FALLBACK FIX
         try:
             dur_w = draw.textlength(duration, font=font_time)
-        except:
-            dur_w = draw.textsize(duration, font=font_time)[0]
+        except AttributeError:
+            try:
+                dur_w = draw.textsize(duration, font=font_time)[0]
+            except AttributeError:
+                dur_w = 40 # Ultimate fallback 
+                
         draw.text((right_x + bar_w - dur_w, bar_y + 22), duration, fill=WHITE, font=font_time)
 
         # --------------------------------------------------
@@ -256,3 +265,4 @@ async def get_thumb(videoid, user_id=None):
         except:
             pass
         return YOUTUBE_IMG_URL
+    
