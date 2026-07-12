@@ -74,7 +74,7 @@ async def clone_page_cb(client, CallbackQuery, _):
         "/addpremium – <b>ᴧᴅᴅ ᴘʀєϻɪυϻ sᴛᴧᴛυs ᴛσ ᴧ ʙσᴛ ʙʏ ɪᴅ.</b>\n\n"
         "/removepremium – <b>ʀєϻσᴠє ᴘʀєϻɪυϻ sᴛᴧᴛυs ʙʏ ʙσᴛ ɪᴅ.</b>\n\n"
         "/clonedinfo – <b>ᴠɪєᴡ ɪηғσʀϻᴧᴛɪση ᴧʙσυᴛ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
-        "/delallclone – <b>ᴅєʟєᴛє ᴧʟʟ ᴄʟσηє ᴅᴧᴛᴧʙᴧsєs ᴧηᴅ ʙσᴛs.</b></blockquote>"
+        
     )
     await CallbackQuery.edit_message_media(
         media=InputMediaPhoto(
