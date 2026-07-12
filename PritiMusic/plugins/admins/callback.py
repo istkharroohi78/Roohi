@@ -93,10 +93,11 @@ async def clone_page_cb(client, CallbackQuery, _):
 @languageCB
 async def support_page_cb(client, CallbackQuery, _):
     await CallbackQuery.answer()
+    color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
     support_text = (
-        "<blockquote><b>✨ ᴡєʟᴄσϻє ᴛσ ᴛʜє sυᴘᴘσʀᴛ ϻєηυ ✨</b>\n\n"
-        "<b>ɪғ ʏσυ ηєєᴅ ᴧηʏ ʜєʟᴘ ʀєɢᴧʀᴅɪηɢ ᴛʜє ʙσᴛ σʀ ᴡᴧηᴛ ᴛσ ʀєᴘσʀᴛ ᴧ ʙυɢ, "
-        "ᴊσɪη συʀ sυᴘᴘσʀᴛ ᴄʜᴧᴛ σʀ ᴄʜᴧηηєʟ ʙєʟσᴡ.</b></blockquote>"
+        f"<blockquote><b>{color} ✨ ᴡєʟᴄσϻє ᴛσ ᴛʜє sυᴘᴘσʀᴛ ϻєηυ ✨</b>\n\n"
+        f"<b>ɪғ ʏσυ ηєєᴅ ᴧηʏ ʜєʟᴘ ʀєɢᴧʀᴅɪηɢ ᴛʜє ʙσᴛ σʀ ᴡᴧηᴛ ᴛσ ʀєᴘσʀᴛ ᴧ ʙυɢ, "
+        f"ᴊσɪη συʀ sυᴘᴘσʀᴛ ᴄʜᴧᴛ σʀ ᴄʜᴧηηєʟ ʙєʟσᴡ.</b></blockquote>"
     )
 
     custom_support_buttons = [
@@ -122,11 +123,13 @@ async def support_page_cb(client, CallbackQuery, _):
 async def gib_repo_callback(_, callback_query):
     try:
         image_url = "https://files.catbox.moe/lcw2m5.jpg"
+        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
         await callback_query.edit_message_media(
             media=InputMediaPhoto(
                 media=image_url, 
-                caption="<blockquote><b>📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :</b>\n\n<b>❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.</b>\n<b>❖ ʏσυ ᴄᴧη єᴧsɪʟʏ ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.</b>\n\n<b>🔗 ɢɪᴛʜυʙ : ᴄʟɪᴄᴋ ʜєʀє</b></blockquote>"
-        ),
+                                caption=f"<blockquote><b>{color} 📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :\n\n❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.\n❖ ʏσυ ᴄᴧη ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.\n\n🔗 ɢɪᴛʜυʙ : <a href='https://github.com/TEAM-ISTKHAR'>ᴄʟɪᴄᴋ ʜєʀє</a></b></blockquote>"
+            ),
+            
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -139,7 +142,7 @@ async def gib_repo_callback(_, callback_query):
     except Exception as e:
         await callback_query.answer(f"Error: {str(e)}", show_alert=True)
 
-     @app.on_callback_query(filters.regex("unban_assistant"))
+@app.on_callback_query(filters.regex("unban_assistant"))
 async def unban_assistant(_, callback: CallbackQuery):
     chat_id = callback.message.chat.id
     userbot = await get_assistant(chat_id)
@@ -237,19 +240,20 @@ async def del_back_playlist(client, CallbackQuery, _):
 
     # ✅ AUTOPLAY BUTTON LOGIC ADDED HERE
     elif command == "Autoplay":
+        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
         state = await is_autoplay_group(chat_id)
         if state:
             await remove_autoplay_group(chat_id)
             await CallbackQuery.answer("🔴 ᴧυᴛσᴘʟᴧʏ ᴅɪsᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"<blockquote><b>🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ ᴅɪsᴧʙʟєᴅ 🔴.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
+                f"<blockquote><b>{color} 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ ᴅɪsᴧʙʟєᴅ 🔴.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                  reply_markup=close_markup(_)
             )
         else:
             await add_autoplay_group(chat_id)
             await CallbackQuery.answer("🟢 ᴧυᴛσᴘʟᴧʏ єηᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"<blockquote><b>🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ єηᴧʙʟєᴅ 🟢.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
+                f"<blockquote><b>{color} 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ єηᴧʙʟєᴅ 🟢.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                   reply_markup=close_markup(_)
             )
 
@@ -258,8 +262,9 @@ async def del_back_playlist(client, CallbackQuery, _):
         if not check or len(check) == 0:
             return await CallbackQuery.answer("ǫυєυє ɪs єϻᴘᴛʏ σʀ ᴛʜє ᴘʟᴧʏʟɪsᴛ ʜᴧs ʙєєη ᴄʟєᴧʀєᴅ!", show_alert=True)
         
+        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
         if command == "Skip":
-            txt = f"<blockquote><b>➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+            txt = f"<blockquote><b>{color} ➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
             try:
                 popped = check.pop(0)
                 if popped: await auto_clean(popped)
@@ -270,7 +275,7 @@ async def del_back_playlist(client, CallbackQuery, _):
             except:
                 return await Lucky.stop_stream(chat_id)
         else:
-            txt = f"<blockquote><b>➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+            txt = f"<blockquote><b>{color} ➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
 
         await CallbackQuery.answer()
         queued = check[0]["file"]
@@ -340,5 +345,6 @@ asyncio.create_task(markup_timer())
 # --- YAHAN SE FILE ID NIKALNE WALA CODE START HOTA HAI ---
 @app.on_message(filters.video & filters.private)
 async def get_my_own_file_id(client, message):
-    await message.reply_text(f"<blockquote><b>ϻєʀᴧ ᴠɪᴅєσ ғɪʟє ɪᴅ (ɪsᴋσ ᴄσᴘʏ ᴋᴧʀσ) :</b>\n<code>{message.video.file_id}</code></blockquote>")
-# --- YAHAN KHATAM ---
+    color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
+    await message.reply_text(f"<blockquote><b>{color} ϻєʀᴧ ᴠɪᴅєσ ғɪʟє ɪᴅ (ɪsᴋσ ᴄσᴘʏ ᴋᴧʀσ) :</b>\n<code>{message.video.file_id}</code></blockquote>")
+            
