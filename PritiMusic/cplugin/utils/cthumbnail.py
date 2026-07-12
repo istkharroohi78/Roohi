@@ -27,7 +27,6 @@ META_FONT_PATH = "PritiMusic/assets/font.ttf"
 CANVAS_SIZE = (1280, 720)
 TEXT_GRAY = (180, 180, 180)
 WHITE = (255, 255, 255)
-
 NEON_COLORS = [(255, 40, 130), (0, 204, 255), (255, 220, 0), (20, 100, 255)]
 
 def fit_cover(image, size):
@@ -60,7 +59,7 @@ def trim_text(text: str, limit: int) -> str:
     clean_text = " ".join(str(text or "").split())
     if len(clean_text) <= limit: return clean_text
     return clean_text[: max(limit - 3, 0)].rstrip() + "..."
-    
+
 def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
     if icon == "prev":
         draw.polygon([(cx + 12, cy - 14), (cx - 2, cy), (cx + 12, cy + 14)], fill=fill)
@@ -73,7 +72,8 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         draw.polygon([(cx - 12, cy - 14), (cx + 2, cy), (cx - 12, cy + 14)], fill=fill)
         draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
         draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
-        async def get_thumb(videoid, user_id=None, app=None):
+
+async def get_thumb(videoid, user_id=None, app=None):
     os.makedirs(CACHE_DIR, exist_ok=True)
     cache_path = os.path.join(CACHE_DIR, f"{videoid}_{user_id}_premium_v6.png")
     if os.path.isfile(cache_path): return cache_path
@@ -98,6 +98,7 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
                 if resp.status == 200:
                     async with aiofiles.open(temp_thumb_path, mode="wb") as f:
                         await f.write(await resp.read())
+                else: return YOUTUBE_IMG_URL
 
         source_image = Image.open(temp_thumb_path).convert("RGBA")
         theme_color = random.choice(NEON_COLORS)
@@ -106,11 +107,11 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         background = ImageEnhance.Brightness(background).enhance(0.20)
         scene = background.copy()
         
-        font_title = load_font(TITLE_FONT_PATH, 46)
-        font_stats_label = load_font(META_FONT_PATH, 34)
-        font_stats_value = load_font(TITLE_FONT_PATH, 34)
-        font_pill = load_font(TITLE_FONT_PATH, 26)
-        font_time = load_font(TITLE_FONT_PATH, 24)
+        font_title = load_font(TITLE_FONT_PATH, 42)
+        font_stats_label = load_font(TITLE_FONT_PATH, 32)
+        font_stats_value = load_font(TITLE_FONT_PATH, 32)
+        font_pill = load_font(TITLE_FONT_PATH, 24)
+        font_time = load_font(TITLE_FONT_PATH, 22)
 
         art_size, art_x, art_y = 520, 70, 100
         glow_layer = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 0))
@@ -123,24 +124,24 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
 
         right_x = 650
         draw.rounded_rectangle([(right_x, art_y), (right_x + 230, art_y + 45)], radius=20, fill=theme_color)
-        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill, stroke_width=1)
-        draw.text((right_x, art_y + 80), title, fill=WHITE, font=font_title, stroke_width=2)
-        draw.line([(right_x, art_y + 145), (1200, art_y + 145)], fill=theme_color, width=4)
+        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill)
+        draw.text((right_x, art_y + 80), title, fill=WHITE, font=font_title)
+        draw.line([(right_x, art_y + 140), (1200, art_y + 140)], fill=theme_color, width=3)
 
         stat_y = art_y + 190
-        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1)
-        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value, stroke_width=1)
-        draw.text((right_x, stat_y + 55), "Views:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1)
-        draw.text((right_x + 180, stat_y + 55), f"{views_str} views", fill=theme_color, font=font_stats_value, stroke_width=1)
-        draw.text((right_x, stat_y + 110), "Player:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1)
-        draw.text((right_x + 180, stat_y + 110), f"@{channel}", fill=theme_color, font=font_stats_value, stroke_width=1)
+        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label)
+        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + 55), "Views:", fill=TEXT_GRAY, font=font_stats_label)
+        draw.text((right_x + 180, stat_y + 55), f"{views_str} views", fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + 110), "Player:", fill=TEXT_GRAY, font=font_stats_label)
+        draw.text((right_x + 180, stat_y + 110), f"@{channel}", fill=theme_color, font=font_stats_value)
 
-        bar_y = stat_y + 195
+        bar_y = stat_y + 190
         draw.rounded_rectangle([(right_x, bar_y), (right_x + 550, bar_y + 8)], radius=3, fill=(255, 255, 255, 40))
         draw.rounded_rectangle([(right_x, bar_y), (right_x + 110, bar_y + 8)], radius=3, fill=theme_color)
         draw.ellipse([(right_x + 101, bar_y - 6), (right_x + 119, bar_y + 14)], fill=WHITE)
-        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time, stroke_width=1)
-        draw.text((right_x + 550 - 40, bar_y + 22), duration, fill=WHITE, font=font_time, stroke_width=1)
+        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time)
+        draw.text((right_x + 510, bar_y + 22), duration, fill=WHITE, font=font_time)
 
         draw_exact_icons(draw, right_x + 220, bar_y + 70, "prev")
         draw_exact_icons(draw, right_x + 275, bar_y + 70, "pause", fill=theme_color)
@@ -152,4 +153,4 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
     except Exception as e:
         LOGGER.error(f"Thumbnail Error: {e}")
         return YOUTUBE_IMG_URL
-    
+        
