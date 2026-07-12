@@ -30,6 +30,7 @@ from PritiMusic.utils.inline.start import private_panel
 
 checker = {}
 upvoters = {}
+COLORS = ["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"]
 
 # --- BACK BUTTON HANDLER ---
 @app.on_callback_query(filters.regex("settingsback_helper") & ~BANNED_USERS)
@@ -59,21 +60,21 @@ async def settings_back_helper(client, CallbackQuery, _):
 async def clone_page_cb(client, CallbackQuery, _):
     await CallbackQuery.answer()
     clone_text = (
-"<b>ϻᴧᴋє ʏσυʀ σᴡη ϻυsɪᴄ ʙσᴛ ᴡᴧᴛᴄʜɪηɢ ᴛʜє ᴠɪᴅєσ ᴄᴧʀєғυʟʟʏ.</b>\n\n"
-"<blockquote><b><u>ᴄʟσηє ᴄσϻϻᴧηᴅs :</u></b>\n\n"
-"<b><u>ᴧʟʟ υsєʀs :</u></b>\n"
-"/clone – <b>ᴄʟσηє ʏσυʀ σᴡη ʙσᴛ υsɪηɢ ʙσᴛ ᴛσᴋєη ғʀσϻ @BotFather.</b>\n"
-"<b>єxᴧϻᴘʟє:</b> /clone <code>ᴘᴧsᴛє_ᴛσᴋєη_ʜєʀє</code>\n\n"
-"/rmbot – <b>ᴅєʟєᴛє ʏσυʀ ᴄʟσηєᴅ ʙσᴛ.</b>\n\n"
-"/mybot – <b>ᴄʜєᴄᴋ ᴛʜє ʙσᴛs ʏσυ'ᴠє ᴄʟσηєᴅ.</b>\n\n"
-"<b><u>σᴡηєʀs & sυᴅσєʀs :</u></b>\n"
-"/cloned – <b>ᴄʜєᴄᴋ ʜσᴡ ϻᴧηʏ ʙσᴛs ʜᴧᴠє ʙєєη ᴄʟσηєᴅ.</b>\n\n"
-"/totalbots – <b>ᴠɪєᴡ ᴛʜє ᴛσᴛᴧʟ ηυϻʙєʀ σғ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
-"/premiumbots – <b>ᴄʜєᴄᴋ ʜσᴡ ϻᴧηʏ ᴘʀєϻɪυϻ ʙσᴛs ᴧʀє ʀυηηɪηɢ.</b>\n\n"
-"/addpremium – <b>ᴧᴅᴅ ᴘʀєϻɪυϻ sᴛᴧᴛυs ᴛσ ᴧ ʙσᴛ ʙʏ ɪᴅ.</b>\n\n"
-"/removepremium – <b>ʀєϻσᴠє ᴘʀєϻɪυϻ sᴛᴧᴛυs ʙʏ ʙσᴛ ɪᴅ.</b>\n\n"
-"/clonedinfo – <b>ᴠɪєᴡ ɪηғσʀϻᴧᴛɪση ᴧʙσυᴛ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
-"/delallclone – <b>ᴅєʟєᴛє ᴧʟʟ ᴄʟσηє ᴅᴧᴛᴧʙᴧsєs ᴧηᴅ ʙσᴛs.</b></blockquote>"
+        "<b>ϻᴧᴋє ʏσυʀ σᴡη ϻυsɪᴄ ʙσᴛ ᴡᴧᴛᴄʜɪηɢ ᴛʜє ᴠɪᴅєσ ᴄᴧʀєғυʟʟʏ.</b>\n\n"
+        "<blockquote><b><u>ᴄʟσηє ᴄσϻϻᴧηᴅs :</u></b>\n\n"
+        "<b><u>ᴧʟʟ υsєʀs :</u></b>\n"
+        "/clone – <b>ᴄʟσηє ʏσυʀ σᴡη ʙσᴛ υsɪηɢ ʙσᴛ ᴛσᴋєη ғʀσϻ @BotFather.</b>\n"
+        "<b>єxᴧϻᴘʟє:</b> /clone <code>ᴘᴧsᴛє_ᴛσᴋєη_ʜєʀє</code>\n\n"
+        "/rmbot – <b>ᴅєʟєᴛє ʏσυʀ ᴄʟσηєᴅ ʙσᴛ.</b>\n\n"
+        "/mybot – <b>ᴄʜєᴄᴋ ᴛʜє ʙσᴛs ʏσυ'ᴠє ᴄʟσηєᴅ.</b>\n\n"
+        "<b><u>σᴡηєʀs & sυᴅσєʀs :</u></b>\n"
+        "/cloned – <b>ᴄʜєᴄᴋ ʜσᴡ ϻᴧηʏ ʙσᴛs ʜᴧᴠє ʙєєη ᴄʟσηєᴅ.</b>\n\n"
+        "/totalbots – <b>ᴠɪєᴡ ᴛʜє ᴛσᴛᴧʟ ηυϻʙєʀ σғ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
+        "/premiumbots – <b>ᴄʜєᴄᴋ ʜσᴡ ϻᴧηʏ ᴘʀєϻɪυϻ ʙσᴛs ᴧʀє ʀυηηɪηɢ.</b>\n\n"
+        "/addpremium – <b>ᴧᴅᴅ ᴘʀєϻɪυϻ sᴛᴧᴛυs ᴛσ ᴧ ʙσᴛ ʙʏ ɪᴅ.</b>\n\n"
+        "/removepremium – <b>ʀєϻσᴠє ᴘʀєϻɪυϻ sᴛᴧᴛυs ʙʏ ʙσᴛ ɪᴅ.</b>\n\n"
+        "/clonedinfo – <b>ᴠɪєᴡ ɪηғσʀϻᴧᴛɪση ᴧʙσυᴛ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
+        "/delallclone – <b>ᴅєʟєᴛє ᴧʟʟ ᴄʟσηє ᴅᴧᴛᴧʙᴧsєs ᴧηᴅ ʙσᴛs.</b></blockquote>"
     )
     await CallbackQuery.edit_message_media(
         media=InputMediaPhoto(
@@ -82,7 +83,7 @@ async def clone_page_cb(client, CallbackQuery, _):
         ),
         reply_markup=InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton(text="⌯ ʙᴀᴄᴋ ⌯", callback_data="settingsback_helper")]
+                [InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper")]
             ]
         )
     )
@@ -93,18 +94,18 @@ async def clone_page_cb(client, CallbackQuery, _):
 async def support_page_cb(client, CallbackQuery, _):
     await CallbackQuery.answer()
     support_text = (
-        "**✨ ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ sᴜᴘᴘᴏʀᴛ ᴍᴇɴᴜ ✨**\n\n"
-        "ɪғ ʏᴏᴜ ɴᴇᴇᴅ ᴀɴʏ ʜᴇʟᴘ ʀᴇɢᴀʀᴅɪɴɢ ᴛʜᴇ ʙᴏᴛ ᴏʀ ᴡᴀɴᴛ ᴛᴏ ʀᴇᴘᴏʀᴛ ᴀ ʙᴜɢ, "
-        "ᴊᴏɪɴ ᴏᴜʀ sᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ ᴏʀ ᴄʜᴀɴɴᴇʟ ʙᴇʟᴏᴡ."
+        "<blockquote><b>✨ ᴡєʟᴄσϻє ᴛσ ᴛʜє sυᴘᴘσʀᴛ ϻєηυ ✨</b>\n\n"
+        "<b>ɪғ ʏσυ ηєєᴅ ᴧηʏ ʜєʟᴘ ʀєɢᴧʀᴅɪηɢ ᴛʜє ʙσᴛ σʀ ᴡᴧηᴛ ᴛσ ʀєᴘσʀᴛ ᴧ ʙυɢ, "
+        "ᴊσɪη συʀ sυᴘᴘσʀᴛ ᴄʜᴧᴛ σʀ ᴄʜᴧηηєʟ ʙєʟσᴡ.</b></blockquote>"
     )
 
     custom_support_buttons = [
         [
-            InlineKeyboardButton(text="📢 ᴜᴘᴅᴀᴛᴇs", url="https://t.me/betabot_hub"),
-            InlineKeyboardButton(text="💬 sᴜᴘᴘᴏʀᴛ", url="https://t.me/betabot_support")
+            InlineKeyboardButton(text=f"{random.choice(COLORS)} υᴘᴅᴧᴛєs", url="https://t.me/betabot_hub"),
+            InlineKeyboardButton(text=f"{random.choice(COLORS)} sυᴘᴘσʀᴛ", url="https://t.me/betabot_support")
         ],
         [
-            InlineKeyboardButton(text="⌯ ʙᴀᴄᴋ ⌯", callback_data="settingsback_helper")
+            InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper")
         ]
     ]
 
@@ -116,22 +117,21 @@ async def support_page_cb(client, CallbackQuery, _):
         reply_markup=InlineKeyboardMarkup(custom_support_buttons)
     )
 
-# --- SOURCE PAGE (UPDATED TO PHOTO) ---
+# --- SOURCE PAGE ---
 @app.on_callback_query(filters.regex("gib_source"))
 async def gib_repo_callback(_, callback_query):
     try:
         image_url = "https://files.catbox.moe/lcw2m5.jpg"
-
         await callback_query.edit_message_media(
             media=InputMediaPhoto(
                 media=image_url, 
-                caption="REPO = ||ɪsᴛᴋʜᴀʀ ᴅᴇᴠɪʟ ᴋᴏ ᴘᴀᴘᴀ ʙᴏʟ ᴄʜᴀʟ ʙᴏʟ😎||"
-            ),
+                caption="<blockquote><b>📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :</b>\n\n<b>❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.</b>\n<b>❖ ʏσυ ᴄᴧη єᴧsɪʟʏ ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.</b>\n\n<b>🔗 ɢɪᴛʜυʙ : ᴄʟɪᴄᴋ ʜєʀє</b></blockquote>"
+        ),
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton(text="• ʙᴀᴄᴋ •", callback_data="settingsback_helper"),
-                        InlineKeyboardButton(text="• ᴄʟᴏsᴇ •", callback_data="close")
+                        InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper"),
+                        InlineKeyboardButton(text=f"{random.choice(COLORS)} ᴄʟσsє {random.choice(COLORS)}", callback_data="close")
                     ]
                 ]
             ),
@@ -139,15 +139,15 @@ async def gib_repo_callback(_, callback_query):
     except Exception as e:
         await callback_query.answer(f"Error: {str(e)}", show_alert=True)
 
-@app.on_callback_query(filters.regex("unban_assistant"))
+     @app.on_callback_query(filters.regex("unban_assistant"))
 async def unban_assistant(_, callback: CallbackQuery):
     chat_id = callback.message.chat.id
     userbot = await get_assistant(chat_id)
     try:
         await app.unban_chat_member(chat_id, userbot.id)
-        await callback.answer("Assistant Unbanned Successfully!", show_alert=True)
+        await callback.answer("ᴧssɪsᴛᴧηᴛ υηʙᴧηηєᴅ sυᴄᴄєssғυʟʟʏ!", show_alert=True)
     except Exception:
-        await callback.answer("Failed to unban. Give me Admin permissions.", show_alert=True)
+        await callback.answer("ғᴧɪʟєᴅ ᴛσ υηʙᴧη. ɢɪᴠє ϻє ᴧᴅϻɪη ᴘєʀϻɪssɪσηs.", show_alert=True)
 
 # --- ADMIN COMMANDS ---
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
@@ -199,13 +199,13 @@ async def del_back_playlist(client, CallbackQuery, _):
             except:
                 pass
             command = counter
-            mention = "ᴜᴘᴠᴏᴛᴇs"
+            mention = "υᴘᴠσᴛєs"
         else:
             if CallbackQuery.from_user.id in upvoters[chat_id][CallbackQuery.message.id]:
                 await CallbackQuery.answer(_["admin_38"], show_alert=True)
             else:
                 await CallbackQuery.answer(_["admin_39"], show_alert=True)
-            upl = InlineKeyboardMarkup([[InlineKeyboardButton(text=f"👍 {get_upvotes}", callback_data=f"ADMIN  UpVote|{chat_id}_{counter}")]])
+            upl = InlineKeyboardMarkup([[InlineKeyboardButton(text=f"{random.choice(COLORS)} 👍 {get_upvotes} {random.choice(COLORS)}", callback_data=f"ADMIN  UpVote|{chat_id}_{counter}")]])
             await CallbackQuery.answer(_["admin_40"], show_alert=True)
             return await CallbackQuery.edit_message_reply_markup(reply_markup=upl)
     else:
@@ -240,25 +240,26 @@ async def del_back_playlist(client, CallbackQuery, _):
         state = await is_autoplay_group(chat_id)
         if state:
             await remove_autoplay_group(chat_id)
-            await CallbackQuery.answer("🔴 Autoplay Disabled!", show_alert=True)
+            await CallbackQuery.answer("🔴 ᴧυᴛσᴘʟᴧʏ ᴅɪsᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"**🎧 𝐀ᴜᴛᴏᴘʟᴀʏ 𝐒ʏsᴛᴇᴍ**\n\nᴀᴜᴛᴏᴘʟᴀʏ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ ɪs ɴᴏᴡ **ᴅɪsᴀʙʟᴇᴅ 🔴**.\n└ ʙʏ : {mention}",
+                f"<blockquote><b>🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ ᴅɪsᴧʙʟєᴅ 🔴.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                  reply_markup=close_markup(_)
             )
         else:
             await add_autoplay_group(chat_id)
-            await CallbackQuery.answer("🟢 Autoplay Enabled!", show_alert=True)
+            await CallbackQuery.answer("🟢 ᴧυᴛσᴘʟᴧʏ єηᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"🎧 𝐀ᴜᴛᴏᴘʟᴀʏ 𝐒ʏsᴛᴇᴍ\n\nᴀᴜᴛᴏᴘʟᴀʏ ғᴏʀ ᴛʜɪs ɢʀᴏᴜᴘ ɪs ɴᴏᴡ ᴇɴᴀʙʟᴇᴅ 🟢.\n└ ʙʏ : {mention}",
+                f"<blockquote><b>🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ єηᴧʙʟєᴅ 🟢.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                   reply_markup=close_markup(_)
             )
 
     elif command == "Skip" or command == "Replay":
         check = db.get(chat_id)
         if not check or len(check) == 0:
-            return await CallbackQuery.answer("ǫᴜᴇᴜᴇ ɪs ᴇᴍᴘᴛʏ ᴏʀ ᴛʜᴇ ᴘʟᴀʏʟɪsᴛ ʜᴀs ʙᴇᴇɴ ᴄʟᴇᴀʀᴇᴅ!", show_alert=True)
+            return await CallbackQuery.answer("ǫυєυє ɪs єϻᴘᴛʏ σʀ ᴛʜє ᴘʟᴧʏʟɪsᴛ ʜᴧs ʙєєη ᴄʟєᴧʀєᴅ!", show_alert=True)
+        
         if command == "Skip":
-            txt = f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
+            txt = f"<blockquote><b>➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
             try:
                 popped = check.pop(0)
                 if popped: await auto_clean(popped)
@@ -269,7 +270,7 @@ async def del_back_playlist(client, CallbackQuery, _):
             except:
                 return await Lucky.stop_stream(chat_id)
         else:
-            txt = f"➻ sᴛʀᴇᴀᴍ ʀᴇ-ᴘʟᴀʏᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
+            txt = f"<blockquote><b>➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
 
         await CallbackQuery.answer()
         queued = check[0]["file"]
@@ -339,5 +340,5 @@ asyncio.create_task(markup_timer())
 # --- YAHAN SE FILE ID NIKALNE WALA CODE START HOTA HAI ---
 @app.on_message(filters.video & filters.private)
 async def get_my_own_file_id(client, message):
-    await message.reply_text(f"**Mera Video File ID (Isko Copy Karo):**\n`{message.video.file_id}`")
+    await message.reply_text(f"<blockquote><b>ϻєʀᴧ ᴠɪᴅєσ ғɪʟє ɪᴅ (ɪsᴋσ ᴄσᴘʏ ᴋᴧʀσ) :</b>\n<code>{message.video.file_id}</code></blockquote>")
 # --- YAHAN KHATAM ---
