@@ -41,6 +41,7 @@ NEON_COLORS = [
     (255, 220, 0),    # Neon Yellow
     (20, 100, 255)    # Neon Blue
 ]
+
 # ----------------- HELPER FUNCTIONS ----------------- #
 
 def fit_cover(image, size):
@@ -97,9 +98,9 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         draw.polygon([(cx - 12, cy - 14), (cx + 2, cy), (cx - 12, cy + 14)], fill=fill)
         draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
         draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
-             # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
-
-async def gen_thumb(videoid, user_id=None):
+        # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
+# 👇 YAHAN MAIN FIX HAI: 'app=None' add kiya aur naam 'get_thumb' kar diya
+async def get_thumb(videoid, user_id=None, app=None):
     """
     Main function used by PritiMusic to generate or fetch premium UI thumbnails.
     """
@@ -257,4 +258,4 @@ async def gen_thumb(videoid, user_id=None):
         except:
             pass
         return YOUTUBE_IMG_URL
-        
+    
