@@ -4,6 +4,8 @@ import math
 from pyrogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram import filters
 from pyrogram.errors import WebpageMediaEmpty
+# Make sure to import ButtonStyle from your specific Pyrogram fork (e.g., Kurigram)
+from pyrogram.enums import ButtonStyle 
 
 from PritiMusic import YouTube, app
 from PritiMusic.core.call import Lucky
@@ -30,7 +32,12 @@ from PritiMusic.utils.inline.start import private_panel
 
 checker = {}
 upvoters = {}
-COLORS = ["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"]
+
+# 🎨 Dynamic Color Generator
+def get_style_map():
+    styles = [ButtonStyle.PRIMARY, ButtonStyle.SUCCESS, ButtonStyle.DANGER]
+    random.shuffle(styles)
+    return {1: styles[0], 2: styles[1], 3: styles[2], 4: styles[0]}
 
 # --- BACK BUTTON HANDLER ---
 @app.on_callback_query(filters.regex("settingsback_helper") & ~BANNED_USERS)
@@ -59,6 +66,7 @@ async def settings_back_helper(client, CallbackQuery, _):
 @languageCB
 async def clone_page_cb(client, CallbackQuery, _):
     await CallbackQuery.answer()
+    style_map = get_style_map()
     clone_text = (
         "<b>ϻᴧᴋє ʏσυʀ σᴡη ϻυsɪᴄ ʙσᴛ ᴡᴧᴛᴄʜɪηɢ ᴛʜє ᴠɪᴅєσ ᴄᴧʀєғυʟʟʏ.</b>\n\n"
         "<blockquote><b><u>ᴄʟσηє ᴄσϻϻᴧηᴅs :</u></b>\n\n"
@@ -83,7 +91,7 @@ async def clone_page_cb(client, CallbackQuery, _):
         ),
         reply_markup=InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper")]
+                [InlineKeyboardButton(text="ʙᴧᴄᴋ", callback_data="settingsback_helper", style=style_map[1])]
             ]
         )
     )
@@ -93,20 +101,20 @@ async def clone_page_cb(client, CallbackQuery, _):
 @languageCB
 async def support_page_cb(client, CallbackQuery, _):
     await CallbackQuery.answer()
-    color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
+    style_map = get_style_map()
     support_text = (
-        f"<blockquote><b>{color} ✨ ᴡєʟᴄσϻє ᴛσ ᴛʜє sυᴘᴘσʀᴛ ϻєηυ ✨</b>\n\n"
+        f"<blockquote><b>✨ ᴡєʟᴄσϻє ᴛσ ᴛʜє sυᴘᴘσʀᴛ ϻєηυ ✨</b>\n\n"
         f"<b>ɪғ ʏσυ ηєєᴅ ᴧηʏ ʜєʟᴘ ʀєɢᴧʀᴅɪηɢ ᴛʜє ʙσᴛ σʀ ᴡᴧηᴛ ᴛσ ʀєᴘσʀᴛ ᴧ ʙυɢ, "
         f"ᴊσɪη συʀ sυᴘᴘσʀᴛ ᴄʜᴧᴛ σʀ ᴄʜᴧηηєʟ ʙєʟσᴡ.</b></blockquote>"
     )
 
     custom_support_buttons = [
         [
-            InlineKeyboardButton(text=f"{random.choice(COLORS)} υᴘᴅᴧᴛєs", url="https://t.me/betabot_hub"),
-            InlineKeyboardButton(text=f"{random.choice(COLORS)} sυᴘᴘσʀᴛ", url="https://t.me/betabot_support")
+            InlineKeyboardButton(text="υᴘᴅᴧᴛєs", url="https://t.me/betabot_hub", style=style_map[1]),
+            InlineKeyboardButton(text="sυᴘᴘσʀᴛ", url="https://t.me/betabot_support", style=style_map[2])
         ],
         [
-            InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper")
+            InlineKeyboardButton(text="ʙᴧᴄᴋ", callback_data="settingsback_helper", style=style_map[3])
         ]
     ]
 
@@ -123,18 +131,18 @@ async def support_page_cb(client, CallbackQuery, _):
 async def gib_repo_callback(_, callback_query):
     try:
         image_url = "https://files.catbox.moe/lcw2m5.jpg"
-        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
+        style_map = get_style_map()
         await callback_query.edit_message_media(
             media=InputMediaPhoto(
                 media=image_url, 
-                                caption=f"<blockquote><b>{color} 📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :\n\n❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.\n❖ ʏσυ ᴄᴧη ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.\n\n🔗 ɢɪᴛʜυʙ : <a href='https://github.com/TEAM-ISTKHAR'>ᴄʟɪᴄᴋ ʜєʀє</a></b></blockquote>"
+                                caption=f"<blockquote><b>📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :\n\n❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.\n❖ ʏσυ ᴄᴧη ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.\n\n🔗 ɢɪᴛʜυʙ : <a href='https://github.com/TEAM-ISTKHAR'>ᴄʟɪᴄᴋ ʜєʀє</a></b></blockquote>"
             ),
             
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
-                        InlineKeyboardButton(text=f"{random.choice(COLORS)} ʙᴧᴄᴋ {random.choice(COLORS)}", callback_data="settingsback_helper"),
-                        InlineKeyboardButton(text=f"{random.choice(COLORS)} ᴄʟσsє {random.choice(COLORS)}", callback_data="close")
+                        InlineKeyboardButton(text="ʙᴧᴄᴋ", callback_data="settingsback_helper", style=style_map[1]),
+                        InlineKeyboardButton(text="ᴄʟσsє", callback_data="close", style=style_map[2])
                     ]
                 ]
             ),
@@ -167,6 +175,7 @@ async def del_back_playlist(client, CallbackQuery, _):
     if not await is_active_chat(chat_id):
         return await CallbackQuery.answer(_["general_5"], show_alert=True)
     mention = CallbackQuery.from_user.mention
+    style_map = get_style_map()
 
     if command == "UpVote":
         if chat_id not in votemode: votemode[chat_id] = {}
@@ -208,7 +217,8 @@ async def del_back_playlist(client, CallbackQuery, _):
                 await CallbackQuery.answer(_["admin_38"], show_alert=True)
             else:
                 await CallbackQuery.answer(_["admin_39"], show_alert=True)
-            upl = InlineKeyboardMarkup([[InlineKeyboardButton(text=f"{random.choice(COLORS)} 👍 {get_upvotes} {random.choice(COLORS)}", callback_data=f"ADMIN  UpVote|{chat_id}_{counter}")]])
+            
+            upl = InlineKeyboardMarkup([[InlineKeyboardButton(text=f"👍 {get_upvotes}", callback_data=f"ADMIN  UpVote|{chat_id}_{counter}", style=style_map[1])]])
             await CallbackQuery.answer(_["admin_40"], show_alert=True)
             return await CallbackQuery.edit_message_reply_markup(reply_markup=upl)
     else:
@@ -240,20 +250,19 @@ async def del_back_playlist(client, CallbackQuery, _):
 
     # ✅ AUTOPLAY BUTTON LOGIC ADDED HERE
     elif command == "Autoplay":
-        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
         state = await is_autoplay_group(chat_id)
         if state:
             await remove_autoplay_group(chat_id)
             await CallbackQuery.answer("🔴 ᴧυᴛσᴘʟᴧʏ ᴅɪsᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"<blockquote><b>{color} 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ ᴅɪsᴧʙʟєᴅ 🔴.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
+                f"<blockquote><b>🔴 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ ᴅɪsᴧʙʟєᴅ 🔴.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                  reply_markup=close_markup(_)
             )
         else:
             await add_autoplay_group(chat_id)
             await CallbackQuery.answer("🟢 ᴧυᴛσᴘʟᴧʏ єηᴧʙʟєᴅ!", show_alert=True)
             await CallbackQuery.message.reply_text(
-                f"<blockquote><b>{color} 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ єηᴧʙʟєᴅ 🟢.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
+                f"<blockquote><b>🟢 🎧 ᴧυᴛσᴘʟᴧʏ sʏsᴛєϻ</b>\n\n<b>ᴧυᴛσᴘʟᴧʏ ғσʀ ᴛʜɪs ɢʀσυᴘ ɪs ησᴡ єηᴧʙʟєᴅ 🟢.</b>\n└ <b>ʙʏ :</b> {mention}</blockquote>",
                   reply_markup=close_markup(_)
             )
 
@@ -262,9 +271,8 @@ async def del_back_playlist(client, CallbackQuery, _):
         if not check or len(check) == 0:
             return await CallbackQuery.answer("ǫυєυє ɪs єϻᴘᴛʏ σʀ ᴛʜє ᴘʟᴧʏʟɪsᴛ ʜᴧs ʙєєη ᴄʟєᴧʀєᴅ!", show_alert=True)
         
-        color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
         if command == "Skip":
-            txt = f"<blockquote><b>{color} ➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+            txt = f"<blockquote><b>⏭ ➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
             try:
                 popped = check.pop(0)
                 if popped: await auto_clean(popped)
@@ -275,7 +283,7 @@ async def del_back_playlist(client, CallbackQuery, _):
             except:
                 return await Lucky.stop_stream(chat_id)
         else:
-            txt = f"<blockquote><b>{color} ➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+            txt = f"<blockquote><b>⏪ ➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
 
         await CallbackQuery.answer()
         queued = check[0]["file"]
@@ -345,6 +353,4 @@ asyncio.create_task(markup_timer())
 # --- YAHAN SE FILE ID NIKALNE WALA CODE START HOTA HAI ---
 @app.on_message(filters.video & filters.private)
 async def get_my_own_file_id(client, message):
-    color = random.choice(["🔴", "🔵", "🟡", "🟣", "🟢", "🟠", "🩷", "🩵"])
-    await message.reply_text(f"<blockquote><b>{color} ϻєʀᴧ ᴠɪᴅєσ ғɪʟє ɪᴅ (ɪsᴋσ ᴄσᴘʏ ᴋᴧʀσ) :</b>\n<code>{message.video.file_id}</code></blockquote>")
-            
+    await message.reply_text(f"<blockquote><b>🎨 ϻєʀᴧ ᴠɪᴅєσ ғɪʟє ɪᴅ (ɪsᴋσ ᴄσᴘʏ ᴋᴧʀσ) :</b>\n<code>{message.video.file_id}</code></blockquote>")
