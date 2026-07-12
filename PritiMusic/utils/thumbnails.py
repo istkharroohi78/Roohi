@@ -8,6 +8,8 @@ import aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from youtubesearchpython.__future__ import VideosSearch
+
+# PritiMusic/Clone Bot configuration imports
 from config import YOUTUBE_IMG_URL
 
 # 🟢 IMPORT ERROR FIX: Agar CACHE_DIR dir.py mein nahi mila, toh crash nahi hoga
@@ -24,6 +26,7 @@ try:
 except AttributeError:
     LANCZOS = Image.LANCZOS
 
+# Paths to your assets
 TITLE_FONT_PATH = "PritiMusic/assets/font2.ttf"
 META_FONT_PATH = "PritiMusic/assets/font.ttf"
 CANVAS_SIZE = (1280, 720)
@@ -31,13 +34,14 @@ CANVAS_SIZE = (1280, 720)
 TEXT_GRAY = (180, 180, 180)
 WHITE = (255, 255, 255)
 
-# 🎨 PREDEFINED PREMIUM GLOW COLORS (Pink, Sky Blue, Yellow, Blue)
+# 🎨 PREDEFINED PREMIUM GLOW COLORS
 NEON_COLORS = [
     (255, 40, 130),   # Neon Pink
     (0, 204, 255),    # Sky Blue
     (255, 220, 0),    # Neon Yellow
     (20, 100, 255)    # Neon Blue
 ]
+
 # ----------------- HELPER FUNCTIONS ----------------- #
 
 def fit_cover(image, size):
@@ -94,9 +98,12 @@ def draw_exact_icons(draw, cx, cy, icon, fill=WHITE):
         draw.polygon([(cx - 12, cy - 14), (cx + 2, cy), (cx - 12, cy + 14)], fill=fill)
         draw.polygon([(cx + 2, cy - 14), (cx + 16, cy), (cx + 16, cy + 14)], fill=fill)
         draw.rounded_rectangle([(cx + 16, cy - 14), (cx + 22, cy + 14)], radius=2, fill=fill)
-    # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
-# 👇 YAHAN MAIN FIX HAI: 'app=None' add kiya gaya hai taaki 3 arguments wala TypeError na aaye
+        # ----------------- MAIN THUMBNAIL GENERATOR ----------------- #
+
 async def get_thumb(videoid, user_id=None, app=None):
+    """
+    Main function used by PritiMusic to generate premium UI thumbnails.
+    """
     os.makedirs(CACHE_DIR, exist_ok=True)
     cache_path = os.path.join(CACHE_DIR, f"{videoid}_{user_id}_premium_v6.png")
     
@@ -125,7 +132,6 @@ async def get_thumb(videoid, user_id=None, app=None):
         async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
             async with session.get(thumbnail_url) as resp:
                 if resp.status == 200:
-                    # 🟢 FILE HANDLING FIX: async with use kiya hai to close automatic ho jayega
                     async with aiofiles.open(temp_thumb_path, mode="wb") as f:
                         await f.write(await resp.read())
                 else:
@@ -133,32 +139,27 @@ async def get_thumb(videoid, user_id=None, app=None):
 
         source_image = Image.open(temp_thumb_path).convert("RGBA")
         
-        # 🎨 RANDOMLY SELECT ONE OF THE 4 PREMIUM COLORS
         theme_color = random.choice(NEON_COLORS)
-        glow_color = (*theme_color, 160) # 160 is for Alpha (Transparency)
+        glow_color = (*theme_color, 160)
 
         background = fit_cover(source_image, CANVAS_SIZE)
         
-        # 🟢 डार्क सिनेमैटिक ब्लर
         background = background.filter(ImageFilter.GaussianBlur(65))
         background = ImageEnhance.Brightness(background).enhance(0.20)
         background = ImageEnhance.Color(background).enhance(1.2)
         scene = background.copy()
         
-        # 🟢 Fonts 
-        font_title = load_font(TITLE_FONT_PATH, 42)
-        font_stats_label = load_font(TITLE_FONT_PATH, 32)
-        font_stats_value = load_font(TITLE_FONT_PATH, 32)
-        font_pill = load_font(TITLE_FONT_PATH, 24)
-        font_time = load_font(TITLE_FONT_PATH, 22)
+        # 🟢 Fonts (Size thoda badhaya gaya hai Bold look ke liye)
+        font_title = load_font(TITLE_FONT_PATH, 46)
+        font_stats_label = load_font(META_FONT_PATH, 34)
+        font_stats_value = load_font(TITLE_FONT_PATH, 34)
+        font_pill = load_font(TITLE_FONT_PATH, 26)
+        font_time = load_font(META_FONT_PATH, 24)
 
-        # --------------------------------------------------
         # 1. LEFT SIDE: SQUARE ART CARD WITH SELECTED GLOW
-        # --------------------------------------------------
         art_size = 520 
         art_x, art_y = 70, 100
         
-        # सॉफ्ट और अट्रैक्टिव ग्लो इफ़ेक्ट
         glow_layer = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 0))
         glow_draw = ImageDraw.Draw(glow_layer)
         glow_spread = 25 
@@ -176,40 +177,34 @@ async def get_thumb(videoid, user_id=None, app=None):
         
         draw.rounded_rectangle([(art_x, art_y), (art_x + art_size, art_y + art_size)], radius=35, outline=theme_color, width=5)
 
-        # --------------------------------------------------
-        # 2. RIGHT SIDE: NOW PLAYING PILL
-        # --------------------------------------------------
+        # 2. RIGHT SIDE: NOW PLAYING PILL (Bold Text)
         right_x = 650
         pill_w = 230
         pill_h = 45
         draw.rounded_rectangle([(right_x, art_y), (right_x + pill_w, art_y + pill_h)], radius=20, fill=theme_color)
-        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill)
+        # stroke_width=1 makes it look bold
+        draw.text((right_x + 30, art_y + 6), "NOW PLAYING", fill=(0, 0, 0), font=font_pill, stroke_width=1, stroke_fill=(0, 0, 0))
 
-        # --------------------------------------------------
-        # 3. TITLE & NEON LINE
-        # --------------------------------------------------
+        # 3. TITLE & NEON LINE (Bold Title)
         title_y = art_y + 80
-        draw.text((right_x, title_y), title, fill=WHITE, font=font_title)
-        draw.line([(right_x, title_y + 60), (1200, title_y + 60)], fill=theme_color, width=3)
+        # stroke_width=2 for the Title to make it extra thick like "Heroine"
+        draw.text((right_x, title_y), title, fill=WHITE, font=font_title, stroke_width=2, stroke_fill=WHITE)
+        draw.line([(right_x, title_y + 65), (1200, title_y + 65)], fill=theme_color, width=4)
 
-        # --------------------------------------------------
-        # 4. STATS (Duration, Views, Player)
-        # --------------------------------------------------
+        # 4. STATS (Bold Labels & Values)
         stat_y = title_y + 110
         spacing = 55
         
-        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y), "Duration:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y), duration, fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
         
-        draw.text((right_x, stat_y + spacing), "Views:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y + spacing), f"{views_str} views", fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + spacing), "Views:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y + spacing), f"{views_str} views", fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
         
-        draw.text((right_x, stat_y + spacing*2), "Player:", fill=TEXT_GRAY, font=font_stats_label)
-        draw.text((right_x + 180, stat_y + spacing*2), f"@{channel}", fill=theme_color, font=font_stats_value)
+        draw.text((right_x, stat_y + spacing*2), "Artist:", fill=TEXT_GRAY, font=font_stats_label, stroke_width=1, stroke_fill=TEXT_GRAY)
+        draw.text((right_x + 180, stat_y + spacing*2), f"{channel}", fill=theme_color, font=font_stats_value, stroke_width=1, stroke_fill=theme_color)
 
-        # --------------------------------------------------
         # 5. GLOWING PROGRESS BAR
-        # --------------------------------------------------
         bar_y = stat_y + spacing*3 + 30
         bar_w = 550
         prog_w = int(bar_w * 0.20) 
@@ -226,22 +221,20 @@ async def get_thumb(videoid, user_id=None, app=None):
         draw.rounded_rectangle([(right_x, bar_y), (right_x + prog_w, bar_y + 8)], radius=3, fill=theme_color)
         draw.ellipse([(right_x + prog_w - 9, bar_y - 6), (right_x + prog_w + 9, bar_y + 14)], fill=WHITE)
         
-        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time)
+        # Bold Time Texts
+        draw.text((right_x, bar_y + 22), "00:00", fill=WHITE, font=font_time, stroke_width=1, stroke_fill=WHITE)
         
-        # 🟢 PILLOW TEXT SIZE FALLBACK FIX
         try:
             dur_w = draw.textlength(duration, font=font_time)
         except AttributeError:
             try:
                 dur_w = draw.textsize(duration, font=font_time)[0]
             except AttributeError:
-                dur_w = 40 # Ultimate fallback 
+                dur_w = 40
                 
-        draw.text((right_x + bar_w - dur_w, bar_y + 22), duration, fill=WHITE, font=font_time)
+        draw.text((right_x + bar_w - dur_w, bar_y + 22), duration, fill=WHITE, font=font_time, stroke_width=1, stroke_fill=WHITE)
 
-        # --------------------------------------------------
         # 6. MEDIA CONTROLS
-        # --------------------------------------------------
         ctrl_y = bar_y + 70
         draw_exact_icons(draw, right_x + 220, ctrl_y, "prev", fill=WHITE)
         draw_exact_icons(draw, right_x + 275, ctrl_y, "pause", fill=theme_color)
@@ -264,4 +257,4 @@ async def get_thumb(videoid, user_id=None, app=None):
         except:
             pass
         return YOUTUBE_IMG_URL
-    
+        
