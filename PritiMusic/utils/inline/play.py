@@ -30,8 +30,8 @@ def create_btn(text, cb=None, url=None, style=ButtonStyle.PRIMARY, no_emoji=Fals
 
 def add_me_button(style):
     return create_btn(
-        text="ᴀᴅᴅ ᴍᴇ", 
-        url=f"https://t.me/{app.username}?startgroup=true",
+        text="ᴄʟᴏɴᴇ ᴍᴇ", 
+        url=f"https://t.me/SizzuMusiCBot",
         style=style
     )
 
