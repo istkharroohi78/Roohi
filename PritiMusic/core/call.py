@@ -23,11 +23,17 @@ from PritiMusic.utils.database import (
     get_loop,
     group_assistant,
     is_autoend,
+    is_autoplay_on,
     music_on,
     remove_active_chat,
     remove_active_video_chat,
     set_loop,
 )
+
+# 🔥 ORIGINAL AUTOPLAY IMPORTS RESTORED 🔥
+from PritiMusic.utils.autoplay import fetch_autoplay_track, remember_played
+from PritiMusic.utils.stream.queue import put_queue
+
 from PritiMusic.utils.exceptions import AssistantErr
 from PritiMusic.utils.formatters import check_duration, seconds_to_min, speed_converter
 from PritiMusic.utils.inline.play import stream_markup, telegram_markup
@@ -193,6 +199,91 @@ class Call(PyTgCalls):
         stream = self._build_stream(file_path, video=video_mode, ffmpeg=ffmpeg)
         await self._play_on_assistant(assistant, chat_id, stream)
 
+    # 🔥 EXACT ORIGINAL AUTOPLAY START LOGIC 🔥
+    async def autoplay_start(self, chat_id: int, original_chat_id: int, seed_title: str, seed_vidid: str = None, client: PyTgCalls = None) -> bool:
+        if seed_vidid:
+            remember_played(chat_id, seed_vidid)
+
+        status_msg = None
+        try:
+            status_msg = await app.send_message(
+                original_chat_id,
+                "ʜσʟᴅ ση...\n\nᴅσᴡηʟσᴧᴅɪηɢ ηєxᴛ ϻєᴅɪᴧ ғʀσϻ ᴛʜє ǫυєυє.",
+            )
+        except Exception:
+            status_msg = None
+
+        async def _fail() -> bool:
+            if status_msg:
+                try: await status_msg.delete()
+                except Exception: pass
+            return False
+
+        track = await fetch_autoplay_track(chat_id, seed_title, seed_vidid)
+        if not track:
+            return await _fail()
+
+        language = await get_lang(chat_id)
+        _ = get_string(language)
+
+        try:
+            file_path, direct = await YouTube.download(track["vidid"], None, videoid=True)
+        except Exception:
+            return await _fail()
+        if not file_path:
+            return await _fail()
+
+        remember_played(chat_id, track["vidid"])
+        title = track["title"].title()
+        duration_min = track["duration_min"]
+
+        await put_queue(
+            chat_id,
+            original_chat_id,
+            file_path if direct else f"vid_{track['vidid']}",
+            title,
+            duration_min,
+            "🔁 ᴀᴜᴛᴏᴘʟᴀʏ",
+            track["vidid"],
+            1,
+            "audio",
+            forceplay=True,
+        )
+
+        stream = self._build_stream(file_path, video=False)
+        assistant = client or await group_assistant(self, chat_id)
+        try:
+            await self._play_on_assistant(assistant, chat_id, stream)
+        except Exception:
+            return await _fail()
+
+        try:
+            # PritiMusic Thumb support
+            img = await get_thumb(track["vidid"], 0, app)
+            if not img: img = "https://telegra.ph/file/2e3d368e77c449c287430.jpg"
+            button = stream_markup(_, chat_id)
+            run = await app.send_photo(
+                chat_id=original_chat_id,
+                photo=img,
+                caption=_["stream_1"].format(
+                    f"https://t.me/{app.username}?start=info_{track['vidid']}",
+                    title[:23],
+                    duration_min,
+                    "ᴀᴜᴛᴏᴘʟᴀʏ 🎧",
+                ),
+                reply_markup=InlineKeyboardMarkup(button),
+            )
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "stream"
+        except Exception:
+            pass
+
+        if status_msg:
+            try: await status_msg.delete()
+            except Exception: pass
+
+        return True
+
     async def stream_call(self, link):
         assistant = await group_assistant(self, config.LOG_GROUP_ID)
         stream = self._build_stream(link, video=True)
@@ -257,83 +348,19 @@ class Call(PyTgCalls):
 
             if popped: await auto_clean(popped)
 
-            # 🔥 AUTOPLAY ENGINE 🔥
+            # 🔥 ORIGINAL TRIGGER WAPAS AA GAYA 🔥
             if not check:
-                from PritiMusic.utils.database.autoplay import is_autoplay_group
-                auto_on = await is_autoplay_group(chat_id)
+                if popped and await is_autoplay_on(chat_id):
+                    started = await self.autoplay_start(
+                        chat_id,
+                        popped.get("chat_id", chat_id),
+                        popped.get("title"),
+                        popped.get("vidid"),
+                        client=client,
+                    )
+                    if started:
+                        return
                 
-                if auto_on and popped:
-                    original_chat_id = popped.get("chat_id", chat_id)
-                    chat_client = popped.get("client", app)
-                    
-                    status_msg = None
-                    try:
-                        status_msg = await chat_client.send_message(original_chat_id, "<blockquote>🎧 <b>𝗔ᴜᴛᴏ𝗣𝗹𝗮𝘆 𝗜s 𝗘ɴᴀ𝗯ʟᴇᴅ</b>\n\n🔍 <i>Sᴇᴀʀᴄʜɪɴɢ ɴᴇxᴛ sᴏɴɢ ғᴏʀ ʏᴏᴜ...</i></blockquote>")
-                    except Exception: pass
-
-                    LOGGER(__name__).info(f"🔄 Spotify-Style Autoplay triggered for {chat_id}")
-                    raw_title = popped.get("title", "Unknown Title")
-                    title_lower = str(raw_title).lower()
-                    last_vidid = str(popped.get("vidid", ""))
-
-                    try:
-                        keywords_map = {
-                            "Hindi": ["arijit singh", "shreya ghoshal", "atif aslam", "neha kakkar", "jubin nautiyal", "darshan raval", "armaan malik", "sonu nigam", "badshah", "sunidhi chauhan", "udit narayan", "kumar sanu", "alka yagnik", "sachet tandon", "parampara", "b praak", "vishal mishra", "shilpa rao", "kk", "mohit chauhan", "ar rahman", "pritam", "mithoon"],
-                            "Punjabi": ["sidhu moose wala", "karan aujla", "diljit dosanjh", "ap dhillon", "amrit maan", "shubh", "kaka", "hardy sandhu", "guru randhawa", "jass manak", "parmish verma", "jaani", "ammy virk", "garry sandhu"],
-                            "Bhojpuri": ["pawan singh", "khesari lal yadav", "shilpi raj", "antra singh", "pramod premi", "ritesh pandey", "arvind akela kallu", "gunjan singh", "samar singh", "neha raj"],
-                            "Haryanvi": ["sapna choudhary", "renuka panwar", "gulzaar chhaniwala", "sumit goswami", "raju punjabi", "amit saini rohtakiya", "pranjal dahiya", "md kd", "masoom sharma"],
-                        }
-
-                        detected_lang, detected_artist, detected_mood = None, None, None
-                        for mood in ["sad", "love", "romantic", "lofi", "chill", "party", "mashup", "dj"]:
-                            if mood in title_lower:
-                                detected_mood = mood
-                                break
-
-                        for lang, kws in keywords_map.items():
-                            for kw in kws:
-                                if kw in title_lower:
-                                    detected_lang = lang
-                                    detected_artist = kw.title()
-                                    break
-                            if detected_lang: break
-
-                        query_parts = []
-                        if detected_artist: query_parts.append(detected_artist)
-                        if detected_lang and not detected_artist: query_parts.append(detected_lang)
-
-                        if query_parts:
-                            if detected_mood: query_parts.append(detected_mood)
-                            query_parts.append("audio track")
-                            search_query = " ".join(query_parts)
-                        else:
-                            search_query = f"More like {raw_title} audio track"
-
-                        recommendation = await YouTube.autoplay(last_vidid=last_vidid, title=search_query, max_duration=600)
-
-                        if recommendation:
-                            db[chat_id].append({
-                                "title": str(recommendation.get("title", "Unknown Title")),
-                                "dur": recommendation.get("duration_min", "0:00"),
-                                "streamtype": popped.get("streamtype", "audio") if popped else "audio",
-                                "by": "Spotify Radio 🟢",
-                                "user_id": 0,
-                                "chat_id": original_chat_id,
-                                "file": f"vid_{recommendation.get('vidid', '')}",
-                                "vidid": str(recommendation.get("vidid", "")),
-                                "seconds": recommendation.get("duration_sec", 0),
-                                "old_dur": recommendation.get("duration_min", "0:00"),
-                                "old_second": 0,
-                                "played": 0,
-                                "client": chat_client
-                            })
-                        if status_msg: asyncio.create_task(status_msg.delete())
-
-                    except Exception as e:
-                        LOGGER(__name__).error(f"❌ Autoplay Query Error: {e}")
-                        if status_msg: asyncio.create_task(status_msg.delete())
-
-            if not db.get(chat_id):
                 await _clear_(chat_id)
                 if chat_id in self.active_clients: self.active_clients.pop(chat_id, None)
                 try: return await client.leave_call(chat_id, close=False)
@@ -372,7 +399,7 @@ class Call(PyTgCalls):
             user_id = db[chat_id][0].get("user_id", 0) 
             duration_str = db[chat_id][0].get("dur", "0:00")
 
-            # 🔥 LOGGER 🔥
+            # 🔥 PLAY LOGGER 🔥
             logger_id = getattr(config, "LOG_GROUP_ID", getattr(config, "LOGGER_ID", None))
             if logger_id:
                 try:
