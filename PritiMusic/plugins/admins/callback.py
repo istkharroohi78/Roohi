@@ -82,7 +82,7 @@ async def clone_page_cb(client, CallbackQuery, _):
         "/addpremium – <b>ᴧᴅᴅ ᴘʀєϻɪυϻ sᴛᴧᴛυs ᴛσ ᴧ ʙσᴛ ʙʏ ɪᴅ.</b>\n\n"
         "/removepremium – <b>ʀєϻσᴠє ᴘʀєϻɪυϻ sᴛᴧᴛυs ʙʏ ʙσᴛ ɪᴅ.</b>\n\n"
         "/clonedinfo – <b>ᴠɪєᴡ ɪηғσʀϻᴧᴛɪση ᴧʙσυᴛ ᴄʟσηєᴅ ʙσᴛs.</b>\n\n"
-        
+
     )
     await CallbackQuery.edit_message_media(
         media=InputMediaPhoto(
@@ -137,7 +137,7 @@ async def gib_repo_callback(_, callback_query):
                 media=image_url, 
                                 caption=f"<blockquote><b>📂 ʙσᴛ sσυʀᴄє ᴄσᴅє :\n\n❖ ʜєʀє ɪs ᴛʜє σғғɪᴄɪᴧʟ sσυʀᴄє ᴄσᴅє σғ ᴛʜɪs ʙσᴛ.\n❖ ʏσυ ᴄᴧη ғσʀᴋ ᴛʜɪs ʀєᴘσ ᴧηᴅ ϻᴧᴋє ʏσυʀ σᴡη ʙσᴛ.\n\n🔗 ɢɪᴛʜυʙ : <a href='https://github.com/TEAM-ISTKHAR'>ᴄʟɪᴄᴋ ʜєʀє</a></b></blockquote>"
             ),
-            
+
             reply_markup=InlineKeyboardMarkup(
                 [
                     [
@@ -159,7 +159,6 @@ async def unban_assistant(_, callback: CallbackQuery):
         await callback.answer("ᴧssɪsᴛᴧηᴛ υηʙᴧηηєᴅ sυᴄᴄєssғυʟʟʏ!", show_alert=True)
     except Exception:
         await callback.answer("ғᴧɪʟєᴅ ᴛσ υηʙᴧη. ɢɪᴠє ϻє ᴧᴅϻɪη ᴘєʀϻɪssɪσηs.", show_alert=True)
-
 # --- ADMIN COMMANDS ---
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
 @languageCB
@@ -217,7 +216,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                 await CallbackQuery.answer(_["admin_38"], show_alert=True)
             else:
                 await CallbackQuery.answer(_["admin_39"], show_alert=True)
-            
+
             upl = InlineKeyboardMarkup([[InlineKeyboardButton(text=f"👍 {get_upvotes}", callback_data=f"ADMIN  UpVote|{chat_id}_{counter}", style=style_map[1])]])
             await CallbackQuery.answer(_["admin_40"], show_alert=True)
             return await CallbackQuery.edit_message_reply_markup(reply_markup=upl)
@@ -266,24 +265,36 @@ async def del_back_playlist(client, CallbackQuery, _):
                   reply_markup=close_markup(_)
             )
 
-    elif command == "Skip" or command == "Replay":
+    elif command == "Skip":
+        check = db.get(chat_id)
+        if not check:
+            return await CallbackQuery.answer(_["admin_22"], show_alert=True)
+        
+        try:
+            # Sahi assistant dhundh kar seedha Autoplay engine (change_stream) ko bhejega
+            pytgcalls_client = Lucky.one
+            if getattr(Lucky, "active_clients", None) and chat_id in Lucky.active_clients:
+                val = Lucky.active_clients[chat_id]
+                if isinstance(val, list) and val: pytgcalls_client = val[0]
+                elif val and not isinstance(val, list): pytgcalls_client = val
+
+            await CallbackQuery.answer()
+            
+            # Message edit/delete for cleaner UI
+            txt = f"<blockquote><b>⏭ ➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+            await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
+            
+            # Send the request to change the stream
+            await Lucky.change_stream(pytgcalls_client, chat_id)
+        except Exception as e:
+            return await CallbackQuery.answer(f"Error: {e}", show_alert=True)
+
+    elif command == "Replay":
         check = db.get(chat_id)
         if not check or len(check) == 0:
             return await CallbackQuery.answer("ǫυєυє ɪs єϻᴘᴛʏ σʀ ᴛʜє ᴘʟᴧʏʟɪsᴛ ʜᴧs ʙєєη ᴄʟєᴧʀєᴅ!", show_alert=True)
-        
-        if command == "Skip":
-            txt = f"<blockquote><b>⏭ ➻ sᴛʀєᴧϻ sᴋɪᴘᴘєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
-            try:
-                popped = check.pop(0)
-                if popped: await auto_clean(popped)
-                if not check:
-                    await CallbackQuery.edit_message_text(txt)
-                    await CallbackQuery.message.reply_text(_["admin_6"].format(mention, CallbackQuery.message.chat.title), reply_markup=close_markup(_))
-                    return await Lucky.stop_stream(chat_id)
-            except:
-                return await Lucky.stop_stream(chat_id)
-        else:
-            txt = f"<blockquote><b>⏪ ➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
+
+        txt = f"<blockquote><b>⏪ ➻ sᴛʀєᴧϻ ʀє-ᴘʟᴧʏєᴅ 🎄</b>\n│ \n└<b>ʙʏ :</b> {mention} 🥀</blockquote>"
 
         await CallbackQuery.answer()
         queued = check[0]["file"]
