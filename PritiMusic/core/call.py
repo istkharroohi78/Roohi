@@ -12,12 +12,13 @@ from pyrogram.enums import ParseMode
 
 from pytgcalls import PyTgCalls, exceptions, types
 from pytgcalls.pytgcalls_session import PyTgCallsSession
+from py_yt import VideosSearch
 
 import config
 from PritiMusic import LOGGER, YouTube, app
 from PritiMusic.misc import db
 
-# 🔥 Sahi aur Error-Free Imports 🔥
+# Sahi Imports
 from PritiMusic.utils.database import (
     add_active_chat,
     add_active_video_chat,
@@ -57,6 +58,7 @@ loop.set_exception_handler(handle_asyncio_exceptions)
 
 autoend = {}
 counter = {}
+played_history = {} # Autoplay anti-loop memory
 
 def get_random_img(img_list):
     if img_list:
@@ -94,8 +96,6 @@ class Call(PyTgCalls):
         if getattr(config, "STRING5", None):
             self.userbot5 = Client(name="LuckyAss5", api_id=config.API_ID, api_hash=config.API_HASH, session_string=str(config.STRING5))
             self.five = PyTgCalls(self.userbot5, cache_duration=100)
-            
-        self.active_clients = {}
 
     def _build_stream(self, source: str, video: bool, ffmpeg: str | None = None) -> types.MediaStream:
         return types.MediaStream(
@@ -128,7 +128,6 @@ class Call(PyTgCalls):
             await _clear_(chat_id)
             await assistant.leave_call(chat_id, close=False)
         except Exception: pass
-        if chat_id in self.active_clients: self.active_clients.pop(chat_id, None)
 
     async def stop_stream_force(self, chat_id: int):
         for string, client in [(config.STRING1, self.one), (config.STRING2, self.two), (config.STRING3, self.three), (config.STRING4, self.four), (config.STRING5, self.five)]:
@@ -137,7 +136,6 @@ class Call(PyTgCalls):
             except Exception: pass
         try: await _clear_(chat_id)
         except Exception: pass
-        if chat_id in self.active_clients: self.active_clients.pop(chat_id, None)
 
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
         assistant = await group_assistant(self, chat_id)
@@ -197,13 +195,30 @@ class Call(PyTgCalls):
         stream = self._build_stream(file_path, video=video_mode, ffmpeg=ffmpeg)
         await self._play_on_assistant(assistant, chat_id, stream)
 
-    # 🔥 SAFE ORIGINAL AUTOPLAY SYSTEM (No Import Errors) 🔥
-    async def autoplay_start(self, chat_id: int, original_chat_id: int, seed_title: str, seed_vidid: str = None, client: PyTgCalls = None) -> bool:
-        try:
-            from PritiMusic.utils.database.autoplay import remember_played
-            if seed_vidid: remember_played(chat_id, seed_vidid)
-        except Exception: pass
+    # 🔥 NATIVE AUTOPLAY TRACK MATCHER (ANTI-LOOP & SAME TYPE) 🔥
+    async def get_autoplay_track(self, chat_id: int, title: str, vidid: str):
+        if chat_id not in played_history:
+            played_history[chat_id] = []
+        if vidid and vidid not in played_history[chat_id]:
+            played_history[chat_id].append(vidid)
+            if len(played_history[chat_id]) > 50:
+                played_history[chat_id].pop(0)
 
+        # Filters unwanted words to get perfect same-vibe songs
+        clean_title = str(title).split("|")[0].split("(")[0].split("-")[0].strip()
+        search_query = f"{clean_title} audio track"
+
+        try:
+            results = VideosSearch(search_query, limit=10).result()
+            for video in results.get("result", []):
+                new_vidid = video.get("id")
+                if new_vidid and new_vidid not in played_history[chat_id]:
+                    return {"vidid": new_vidid, "title": video.get("title"), "duration_min": video.get("duration")}
+        except Exception: pass
+        return None
+
+    # 🔥 AUTOPLAY SYSTEM (ORIGINAL FORMAT + ANTI LOOP) 🔥
+    async def autoplay_start(self, chat_id: int, original_chat_id: int, seed_title: str, seed_vidid: str = None, client: PyTgCalls = None) -> bool:
         status_msg = None
         try:
             status_msg = await app.send_message(original_chat_id, "ʜσʟᴅ ση...\n\nᴅσᴡηʟσᴧᴅɪηɢ ηєxᴛ ϻєᴅɪᴧ ғʀσϻ ᴛʜє ǫυєυє.")
@@ -215,45 +230,45 @@ class Call(PyTgCalls):
                 except Exception: pass
             return False
 
+        # Calls the Anti-loop track finder
+        track = await self.get_autoplay_track(chat_id, seed_title, seed_vidid)
+        if not track: return await _fail()
+
+        try: language = await get_lang(chat_id); _ = get_string(language)
+        except: _ = get_string("en")
+
+        try: file_path, direct = await YouTube.download(track["vidid"], None, videoid=True)
+        except Exception: return await _fail()
+        if not file_path: return await _fail()
+
+        if chat_id not in played_history: played_history[chat_id] = []
+        played_history[chat_id].append(track["vidid"])
+
+        title = track["title"].title()
+        duration_min = track["duration_min"]
+
+        await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{track['vidid']}", title, duration_min, "🔁 ᴀᴜᴛᴏᴘʟᴀʏ", track["vidid"], 1, "audio", forceplay=True)
+
+        stream = self._build_stream(file_path, video=False)
+        assistant = client or await group_assistant(self, chat_id)
+        try: await self._play_on_assistant(assistant, chat_id, stream)
+        except Exception: return await _fail()
+
         try:
-            track = await YouTube.autoplay(last_vidid=seed_vidid, title=seed_title)
-            if not track: return await _fail()
-            
-            vidid = track.get("vidid")
-            title = track.get("title", "Unknown Track").title()
-            duration_min = track.get("duration_min", "0:00")
-
-            try:
-                from PritiMusic.utils.database.autoplay import remember_played
-                remember_played(chat_id, vidid)
-            except Exception: pass
-
-            file_path, direct = await YouTube.download(vidid, None, videoid=True)
-            if not file_path: return await _fail()
-
-            await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, "🔁 ᴀᴜᴛᴏᴘʟᴀʏ", vidid, 1, "audio", forceplay=True)
-
-            stream = self._build_stream(file_path, video=False)
-            assistant = client or await group_assistant(self, chat_id)
-            await self._play_on_assistant(assistant, chat_id, stream)
-
-            try: language = await get_lang(chat_id); _ = get_string(language)
-            except: _ = get_string("en")
-
-            img = await get_thumb(vidid, 0, app)
+            try: img = await get_thumb(track["vidid"])
+            except: img = await get_thumb(track["vidid"], 0, app) # Safe fallback if custom get_thumb takes 3 arguments
             if not img: img = "https://telegra.ph/file/2e3d368e77c449c287430.jpg"
+
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 chat_id=original_chat_id,
                 photo=img,
-                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, "ᴀᴜᴛᴏᴘʟᴀʏ 🎧"),
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{track['vidid']}", title[:23], duration_min, "ᴀᴜᴛᴏᴘʟᴀʏ 🎧"),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "stream"
-        except Exception as e:
-            LOGGER(__name__).error(f"Autoplay Error: {e}")
-            return await _fail()
+        except Exception: pass
 
         if status_msg:
             try: await status_msg.delete()
@@ -274,10 +289,7 @@ class Call(PyTgCalls):
         try: language = await get_lang(chat_id); _ = get_string(language)
         except: _ = get_string("en")
         stream = self._build_stream(link, video=bool(video))
-        try:
-            await self._play_on_assistant(assistant, chat_id, stream)
-            if chat_id not in self.active_clients: self.active_clients[chat_id] = []
-            if assistant not in self.active_clients[chat_id]: self.active_clients[chat_id].append(assistant)
+        try: await self._play_on_assistant(assistant, chat_id, stream)
         except exceptions.NoActiveGroupCall: raise AssistantErr(_["call_8"])
         except Exception: raise AssistantErr(_["call_10"])
         
@@ -291,29 +303,6 @@ class Call(PyTgCalls):
                 users = len(await assistant.get_participants(chat_id))
                 if users == 1: autoend[chat_id] = datetime.now() + timedelta(minutes=1)
             except: pass
-
-    async def auto_end_task(self):
-        empty_vcs = {}
-        while True:
-            await asyncio.sleep(60) 
-            try:
-                active_chats = list(self.active_clients.keys())
-                for chat_id in active_chats:
-                    if not self.active_clients.get(chat_id): continue
-                    assistant = self.active_clients[chat_id][0]
-                    try:
-                        participants = await assistant.get_participants(chat_id)
-                        if len(participants) <= 1:
-                            if chat_id not in empty_vcs: empty_vcs[chat_id] = datetime.now()
-                            elif (datetime.now() - empty_vcs[chat_id]).total_seconds() >= 600:
-                                try:
-                                    await self.stop_stream(chat_id)
-                                    LOGGER(__name__).info(f"Bot left VC {chat_id} after 10 min inactivity.")
-                                except: pass
-                                empty_vcs.pop(chat_id, None)
-                        else: empty_vcs.pop(chat_id, None)
-                    except Exception: pass
-            except Exception: pass
     async def change_stream(self, client: PyTgCalls, chat_id: int):
         check = db.get(chat_id)
         popped = None
@@ -328,7 +317,6 @@ class Call(PyTgCalls):
 
             if popped: await auto_clean(popped)
 
-            # 🔥 AUTOPLAY TRIGGER 🔥
             if not check:
                 try:
                     from PritiMusic.utils.database.autoplay import is_autoplay_group
@@ -347,7 +335,6 @@ class Call(PyTgCalls):
                     LOGGER(__name__).error(f"Autoplay trigger error: {e}")
                 
                 await _clear_(chat_id)
-                if chat_id in self.active_clients: self.active_clients.pop(chat_id, None)
                 try: return await client.leave_call(chat_id, close=False)
                 except Exception: return
 
@@ -427,7 +414,9 @@ class Call(PyTgCalls):
                 stream = self._build_stream(file_path, video=video)
                 try: await self._play_on_assistant(client, chat_id, stream)
                 except Exception: return await chat_client.send_message(original_chat_id, text=_["call_6"])
-                img = await get_thumb(videoid, user_id, chat_client) or get_random_img(config.PLAYLIST_IMG_URL)
+                try: img = await get_thumb(videoid)
+                except: img = await get_thumb(videoid, user_id, chat_client) # Fallback if standard takes 3 arguments
+                if not img: img = get_random_img(config.PLAYLIST_IMG_URL)
                 button = stream_markup(_, chat_id)
                 try: await mystic.delete()
                 except: pass
@@ -469,7 +458,9 @@ class Call(PyTgCalls):
                         db[chat_id][0]["markup"] = "tg"
                     except: pass
                 else:
-                    img = await get_thumb(videoid, user_id, chat_client) or get_random_img(config.PLAYLIST_IMG_URL)
+                    try: img = await get_thumb(videoid)
+                    except: img = await get_thumb(videoid, user_id, chat_client) # Fallback
+                    if not img: img = get_random_img(config.PLAYLIST_IMG_URL)
                     button = stream_markup(_, chat_id)
                     try:
                         run = await chat_client.send_photo(chat_id=original_chat_id, photo=img, caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{videoid}", title[:23], duration_str, user), reply_markup=InlineKeyboardMarkup(button))
@@ -493,7 +484,6 @@ class Call(PyTgCalls):
         if getattr(config, "STRING3", None): await self.three.start()
         if getattr(config, "STRING4", None): await self.four.start()
         if getattr(config, "STRING5", None): await self.five.start()
-        asyncio.create_task(self.auto_end_task())
 
     async def decorators(self):
         async def _update_handler(client, update: types.Update):
