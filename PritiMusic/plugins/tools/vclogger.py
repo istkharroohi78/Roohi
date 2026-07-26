@@ -13,7 +13,8 @@ from config import adminlist
 
 logger = logging.getLogger(__name__)
 
-enabled_chats: Set[int] = set()
+# Changed to 'disabled_chats' so it's ON by default everywhere
+disabled_chats: Set[int] = set()
 user_join_count: Dict[tuple, int] = {}
 user_cache: Dict[int, tuple] = {}
 vc_participants_cache: Dict[int, list] = {}
@@ -55,8 +56,9 @@ async def send_join_notification(chat_id: int, user_id: int):
     name, username = await get_user_info(chat_id, user_id)
     mention = f'<a href="tg://user?id={user_id}">{name or "User"}</a>'
 
+    # Added HTML blockquote tags
     text = (
-        "<b>#JoinVideoChat</b>\n\n"
+        "<blockquote><b>#JoinVideoChat</b>\n\n"
         f"<b>● ɴᴀᴍᴇ ➛</b> {mention}\n"
         f"<b>● ɪᴅ ➛</b><code>{user_id}</code>\n"
         f"<b>● ᴜsᴇʀɴᴀᴍᴇ ➛</b> {username}"
@@ -64,6 +66,8 @@ async def send_join_notification(chat_id: int, user_id: int):
 
     if count > 1:
         text += f"\n\n<b>🔁 ᴊᴏɪɴ ᴄᴏᴜɴᴛ ➛</b> <code>{count}</code>"
+        
+    text += "</blockquote>"
 
     msg = await app.send_message(chat_id, text)
     asyncio.create_task(delete_message_after_delay(chat_id, msg.id))
@@ -72,11 +76,12 @@ async def send_leave_notification(chat_id: int, user_id: int):
     name, username = await get_user_info(chat_id, user_id)
     mention = f'<a href="tg://user?id={user_id}">{name or "User"}</a>'
 
+    # Added HTML blockquote tags
     text = (
-        "<b>#LeaveVideoChat</b>\n\n"
+        "<blockquote><b>#LeaveVideoChat</b>\n\n"
         f"<b>● ɴᴀᴍᴇ ➛</b> {mention}\n"
         f"<b>● ɪᴅ ➛</b><code>{user_id}</code>\n"
-        f"<b>● ᴜsᴇʀɴᴀᴍᴇ ➛</b> {username}"
+        f"<b>● ᴜsᴇʀɴᴀᴍᴇ ➛</b> {username}</blockquote>"
     )
 
     msg = await app.send_message(chat_id, text)
@@ -99,7 +104,8 @@ async def participant_join(_, update: UpdatedGroupCallParticipant):
     chat_id = update.chat_id
     user_id = update.participant.user_id
 
-    if chat_id not in enabled_chats:
+    # If chat is in disabled_chats, do nothing
+    if chat_id in disabled_chats:
         return
 
     await send_join_notification(chat_id, user_id)
@@ -109,7 +115,8 @@ async def participant_left(_, update: UpdatedGroupCallParticipant):
     chat_id = update.chat_id
     user_id = update.participant.user_id
 
-    if chat_id not in enabled_chats:
+    # If chat is in disabled_chats, do nothing
+    if chat_id in disabled_chats:
         return
 
     await send_leave_notification(chat_id, user_id)
@@ -119,27 +126,26 @@ async def vclogger_cmd(client: Client, message: Message):
     chat_id = message.chat.id
 
     if message.from_user and not await is_admin(chat_id, message.from_user.id):
-        return await message.reply_text("**❌ ᴀᴅᴍɪɴ ᴏɴʟʏ!**")
+        return await message.reply_text("> **❌ ᴀᴅᴍɪɴ ᴏɴʟʏ!**")
 
     if len(message.command) < 2:
-        status = chat_id in enabled_chats
+        status = chat_id not in disabled_chats
         await message.reply_text(
-            f"**📊 ᴠᴄ ʟᴏɢɢᴇʀ :** {'✅ ON' if status else '❌ OFF'}\n\n"
-            "**ᴄᴏᴍᴍᴀɴᴅs :**\n\n**• /vclogger on**\n•** /vclogger off**"
+            f"> **📊 ᴠᴄ ʟᴏɢɢᴇʀ :** {'✅ ON' if status else '❌ OFF'}\n> \n"
+            "> **ᴄᴏᴍᴍᴀɴᴅs :**\n> \n> **• /vclogger on**\n> **• /vclogger off**"
         )
         return
 
     action = message.command[1].lower()
 
     if action == "on":
-        enabled_chats.add(chat_id)
-        await message.reply_text("**✅ ᴠᴄ ʟᴏɢɢᴇʀ ᴇɴᴀʙʟᴇᴅ!**")
+        disabled_chats.discard(chat_id)
+        await message.reply_text("> **✅ ᴠᴄ ʟᴏɢɢᴇʀ ᴇɴᴀʙʟᴇᴅ!**")
 
     elif action == "off":
-        enabled_chats.discard(chat_id)
+        disabled_chats.add(chat_id)
         user_join_count.clear()
-        await message.reply_text("**❌ ᴠᴄ ʟᴏɢɢᴇʀ ᴅɪsᴀʙʟᴇᴅ!**")
+        await message.reply_text("> **❌ ᴠᴄ ʟᴏɢɢᴇʀ ᴅɪsᴀʙʟᴇᴅ!**")
 
     else:
-        await message.reply_text("**ᴜsᴇ:** /vclogger on | off")
-        
+        await message.reply_text("> **ᴜsᴇ:** `/vclogger on | off`")
