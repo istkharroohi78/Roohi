@@ -8,9 +8,9 @@ import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from py_yt import VideosSearch
-from ShiviMusic.utils.database import is_on_off
-from ShiviMusic import app
-from ShiviMusic.utils.formatters import time_to_seconds
+from PritiMusic.utils.database import is_on_off
+from PritiMusic import app
+from PritiMusic.utils.formatters import time_to_seconds
 import os
 import glob
 import random
@@ -20,10 +20,10 @@ from pymongo import MongoClient
 import aiohttp
 import config
 import traceback
-from ShiviMusic import LOGGER
+from PritiMusic import LOGGER
 
 API_URL = "https://teaminflex.xyz"  # Change to your API server URL
-API_KEY = "INFLEX57606928D"
+API_KEY = "INFLEX02770628D"
 
 # ==============================================
 # 🎵 AUDIO DOWNLOAD (Safe JSON + 200 Retry)
