@@ -569,7 +569,7 @@ class Call(PyTgCalls):
                                 "title": str(recommendation.get("title", "Unknown Title")),
                                 "dur": recommendation.get("duration_min", "0:00"),
                                 "streamtype": popped.get("streamtype", "audio") if popped else "audio",
-                                "by": "Spotify Radio 🟢",
+                                "by": "sᴘᴏᴛɪғʏ ",
                                 "user_id": 0,
                                 "chat_id": chat_id,
                                 "file": f"vid_{recommendation.get('vidid', '')}",
