@@ -17,6 +17,7 @@ import config
 from PritiMusic import LOGGER, YouTube, app
 from PritiMusic.misc import db
 
+# 🔥 Sahi aur Error-Free Imports 🔥
 from PritiMusic.utils.database import (
     add_active_chat,
     add_active_video_chat,
@@ -30,10 +31,7 @@ from PritiMusic.utils.database import (
     set_loop,
 )
 
-# Autoplay Imports
-from PritiMusic.utils.autoplay import fetch_autoplay_track, remember_played
 from PritiMusic.utils.stream.queue import put_queue
-
 from PritiMusic.utils.exceptions import AssistantErr
 from PritiMusic.utils.formatters import check_duration, seconds_to_min, speed_converter
 from PritiMusic.utils.inline.play import stream_markup, telegram_markup
@@ -199,12 +197,16 @@ class Call(PyTgCalls):
         stream = self._build_stream(file_path, video=video_mode, ffmpeg=ffmpeg)
         await self._play_on_assistant(assistant, chat_id, stream)
 
-    # 🔥 AUTOPLAY SYSTEM 🔥
+    # 🔥 SAFE ORIGINAL AUTOPLAY SYSTEM (No Import Errors) 🔥
     async def autoplay_start(self, chat_id: int, original_chat_id: int, seed_title: str, seed_vidid: str = None, client: PyTgCalls = None) -> bool:
-        if seed_vidid: remember_played(chat_id, seed_vidid)
+        try:
+            from PritiMusic.utils.database.autoplay import remember_played
+            if seed_vidid: remember_played(chat_id, seed_vidid)
+        except Exception: pass
+
         status_msg = None
         try:
-            status_msg = await app.send_message(original_chat_id, "<blockquote>🎧 <b>𝗔ᴜᴛᴏ𝗣𝗹𝗮𝘆 𝗜s 𝗘ɴᴀ𝗯ʟᴇᴅ</b>\n\n🔍 <i>Sᴇᴀʀᴄʜɪɴɢ ɴᴇxᴛ sᴏɴɢ ғᴏʀ ʏᴏᴜ...</i></blockquote>")
+            status_msg = await app.send_message(original_chat_id, "ʜσʟᴅ ση...\n\nᴅσᴡηʟσᴧᴅɪηɢ ηєxᴛ ϻєᴅɪᴧ ғʀσϻ ᴛʜє ǫυєυє.")
         except Exception: pass
 
         async def _fail() -> bool:
@@ -213,40 +215,45 @@ class Call(PyTgCalls):
                 except Exception: pass
             return False
 
-        track = await fetch_autoplay_track(chat_id, seed_title, seed_vidid)
-        if not track: return await _fail()
-
-        language = await get_lang(chat_id)
-        _ = get_string(language)
-
-        try: file_path, direct = await YouTube.download(track["vidid"], None, videoid=True)
-        except Exception: return await _fail()
-        if not file_path: return await _fail()
-
-        remember_played(chat_id, track["vidid"])
-        title = track["title"].title()
-        duration_min = track["duration_min"]
-
-        await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{track['vidid']}", title, duration_min, "🔁 ᴀᴜᴛᴏᴘʟᴀʏ", track["vidid"], 1, "audio", forceplay=True)
-
-        stream = self._build_stream(file_path, video=False)
-        assistant = client or await group_assistant(self, chat_id)
-        try: await self._play_on_assistant(assistant, chat_id, stream)
-        except Exception: return await _fail()
-
         try:
-            img = await get_thumb(track["vidid"], 0, app)
+            track = await YouTube.autoplay(last_vidid=seed_vidid, title=seed_title)
+            if not track: return await _fail()
+            
+            vidid = track.get("vidid")
+            title = track.get("title", "Unknown Track").title()
+            duration_min = track.get("duration_min", "0:00")
+
+            try:
+                from PritiMusic.utils.database.autoplay import remember_played
+                remember_played(chat_id, vidid)
+            except Exception: pass
+
+            file_path, direct = await YouTube.download(vidid, None, videoid=True)
+            if not file_path: return await _fail()
+
+            await put_queue(chat_id, original_chat_id, file_path if direct else f"vid_{vidid}", title, duration_min, "🔁 ᴀᴜᴛᴏᴘʟᴀʏ", vidid, 1, "audio", forceplay=True)
+
+            stream = self._build_stream(file_path, video=False)
+            assistant = client or await group_assistant(self, chat_id)
+            await self._play_on_assistant(assistant, chat_id, stream)
+
+            try: language = await get_lang(chat_id); _ = get_string(language)
+            except: _ = get_string("en")
+
+            img = await get_thumb(vidid, 0, app)
             if not img: img = "https://telegra.ph/file/2e3d368e77c449c287430.jpg"
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 chat_id=original_chat_id,
                 photo=img,
-                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{track['vidid']}", title[:23], duration_min, "ᴀᴜᴛᴏᴘʟᴀʏ 🎧"),
+                caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{vidid}", title[:23], duration_min, "ᴀᴜᴛᴏᴘʟᴀʏ 🎧"),
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "stream"
-        except Exception: pass
+        except Exception as e:
+            LOGGER(__name__).error(f"Autoplay Error: {e}")
+            return await _fail()
 
         if status_msg:
             try: await status_msg.delete()
@@ -321,22 +328,23 @@ class Call(PyTgCalls):
 
             if popped: await auto_clean(popped)
 
-            # 🔥 DYNAMIC AUTOPLAY TRIGGER 🔥
+            # 🔥 AUTOPLAY TRIGGER 🔥
             if not check:
-                # Utilizing the correct database function
-                from PritiMusic.utils.database.autoplay import is_autoplay_group
-                auto_on = await is_autoplay_group(chat_id)
-                
-                if auto_on and popped:
-                    started = await self.autoplay_start(
-                        chat_id,
-                        popped.get("chat_id", chat_id),
-                        popped.get("title"),
-                        popped.get("vidid"),
-                        client=client,
-                    )
-                    if started:
-                        return
+                try:
+                    from PritiMusic.utils.database.autoplay import is_autoplay_group
+                    auto_on = await is_autoplay_group(chat_id)
+                    
+                    if auto_on and popped:
+                        started = await self.autoplay_start(
+                            chat_id,
+                            popped.get("chat_id", chat_id),
+                            popped.get("title"),
+                            popped.get("vidid"),
+                            client=client,
+                        )
+                        if started: return
+                except Exception as e:
+                    LOGGER(__name__).error(f"Autoplay trigger error: {e}")
                 
                 await _clear_(chat_id)
                 if chat_id in self.active_clients: self.active_clients.pop(chat_id, None)
@@ -376,7 +384,7 @@ class Call(PyTgCalls):
             user_id = db[chat_id][0].get("user_id", 0) 
             duration_str = db[chat_id][0].get("dur", "0:00")
 
-            # 🔥 PLAY LOGGER (Global Logger Group) 🔥
+            # 🔥 GLOBAL PLAY LOGGER 🔥
             logger_id = getattr(config, "LOG_GROUP_ID", getattr(config, "LOGGER_ID", None))
             if logger_id:
                 try:
