@@ -1,6 +1,6 @@
 import random
 from pyrogram import filters
-from pyrogram.enums import ChatMemberStatus, ButtonStyle
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.types import (
     Message,
     InlineKeyboardMarkup,
@@ -47,27 +47,29 @@ def get_panel(chat_id, enabled):
     buttons = InlineKeyboardMarkup(
         [
             [
+                # ButtonStyle and custom emojis require specific Pyrogram forks.
+                # Using standard InlineKeyboardButton format to prevent errors.
                 InlineKeyboardButton(
                     "𝐄ɴᴀʙʟᴇ",
-                    callback_data=f"AUTOPLAY_ENABLE|{chat_id}",
-                    style=ButtonStyle.SUCCESS,
-                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
+                    callback_data=f"AUTOPLAY_ENABLE|{chat_id}"
                 ),
                 InlineKeyboardButton(
                     "𝐃ɪsᴀʙʟᴇ",
-                    callback_data=f"AUTOPLAY_DISABLE|{chat_id}",
-                    style=ButtonStyle.DANGER,
-                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
+                    callback_data=f"AUTOPLAY_DISABLE|{chat_id}"
                 ),
             ],
             [
                 InlineKeyboardButton(
                     f"𝐀ᴜᴛᴏ 𝐏ʟᴀʏ : {status}",
-                    callback_data="AUTOPLAY_STATUS",
-                    style=ButtonStyle.PRIMARY,
-                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
+                    callback_data="AUTOPLAY_STATUS"
                 )
             ],
+            [
+                InlineKeyboardButton(
+                    "🗑 𝐂ʟᴏsᴇ",
+                    callback_data="AUTOPLAY_CLOSE"
+                )
+            ]
         ]
     )
 
@@ -81,6 +83,22 @@ def get_panel(chat_id, enabled):
 )
 @AdminRightsCheck
 async def autoplay_mode(client, message: Message, _, chat_id):
+    # Check if the user passed 'enable' or 'disable' arguments with the command
+    if len(message.command) > 1:
+        action = message.command[1].lower()
+        
+        if action == "enable":
+            await add_autoplay_group(chat_id)
+            return await message.reply_text("> **✅ 𝐀ᴜᴛᴏ 𝐏ʟᴀʏ ʜᴀs ʙᴇᴇɴ ᴇɴᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ!**")
+            
+        elif action == "disable":
+            await remove_autoplay_group(chat_id)
+            return await message.reply_text("> **❌ 𝐀ᴜᴛᴏ 𝐏ʟᴀʏ ʜᴀs ʙᴇᴇɴ ᴅɪsᴀʙʟᴇᴅ ɪɴ ᴛʜɪs ɢʀᴏᴜᴘ!**")
+            
+        else:
+            return await message.reply_text("> **⚠️ 𝐈ɴᴠᴀʟɪᴅ ᴄᴏᴍᴍᴀɴᴅ! 𝐔sᴇ :** `/autoplay enable` **or** `/autoplay disable`")
+
+    # If only /autoplay is sent, display the panel
     enabled = await is_autoplay_group(chat_id)
     caption, buttons = get_panel(chat_id, enabled)
 
@@ -94,8 +112,7 @@ async def autoplay_mode(client, message: Message, _, chat_id):
 @app.on_callback_query(filters.regex("^AUTOPLAY_ENABLE") & ~BANNED_USERS)
 async def autoplay_enable(_, query: CallbackQuery):
     chat_id = int(query.data.split("|")[1])
-    
-    # Corrected Pyrogram v2+ admin check verification
+
     member = await app.get_chat_member(chat_id, query.from_user.id)
     if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
         return await query.answer("❌ You must be an admin to change this setting!", show_alert=True)
@@ -117,8 +134,7 @@ async def autoplay_enable(_, query: CallbackQuery):
 @app.on_callback_query(filters.regex("^AUTOPLAY_DISABLE") & ~BANNED_USERS)
 async def autoplay_disable(_, query: CallbackQuery):
     chat_id = int(query.data.split("|")[1])
-    
-    # Corrected Pyrogram v2+ admin check verification
+
     member = await app.get_chat_member(chat_id, query.from_user.id)
     if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
         return await query.answer("❌ You must be an admin to change this setting!", show_alert=True)
@@ -143,3 +159,14 @@ async def autoplay_status(_, query: CallbackQuery):
         "Auto Play Status Panel",
         show_alert=False,
     )
+
+
+@app.on_callback_query(filters.regex("^AUTOPLAY_CLOSE") & ~BANNED_USERS)
+async def autoplay_close(_, query: CallbackQuery):
+    chat_id = query.message.chat.id
+    member = await app.get_chat_member(chat_id, query.from_user.id)
+    
+    if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+        return await query.answer("❌ Only Admins can close this panel!", show_alert=True)
+        
+    await query.message.delete()
