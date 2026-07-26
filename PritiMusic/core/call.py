@@ -17,7 +17,6 @@ import config
 from PritiMusic import LOGGER, YouTube, app
 from PritiMusic.misc import db
 
-# 🔥 Error fixed: is_autoplay_on removed from here 🔥
 from PritiMusic.utils.database import (
     add_active_chat,
     add_active_video_chat,
@@ -324,7 +323,7 @@ class Call(PyTgCalls):
 
             # 🔥 DYNAMIC AUTOPLAY TRIGGER 🔥
             if not check:
-                # Naya database function call (Error free)
+                # Utilizing the correct database function
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 auto_on = await is_autoplay_group(chat_id)
                 
@@ -377,7 +376,7 @@ class Call(PyTgCalls):
             user_id = db[chat_id][0].get("user_id", 0) 
             duration_str = db[chat_id][0].get("dur", "0:00")
 
-            # 🔥 PLAY LOGGER (Global Logger Group ke liye) 🔥
+            # 🔥 PLAY LOGGER (Global Logger Group) 🔥
             logger_id = getattr(config, "LOG_GROUP_ID", getattr(config, "LOGGER_ID", None))
             if logger_id:
                 try:
